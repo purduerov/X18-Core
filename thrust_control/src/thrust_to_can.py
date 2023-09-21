@@ -17,7 +17,7 @@ can_better_map = {  # TODO
 }
 
 
-class ThrustToCanNode(Node):
+class ThrustToCANNode(Node):
     can_pow = [127, 127, 127, 127, 127, 127, 127, 127]  # power of thrusters --> 127 is neutral
     can_last = {
         0x201: None,
@@ -92,7 +92,7 @@ class ThrustToCanNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = ThrustToCanNode()
+    node = ThrustToCANNode()
 
     rclpy.spin(node)
 

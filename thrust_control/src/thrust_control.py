@@ -9,12 +9,12 @@ MAX_CHANGE = .15
 
 
 class ThrustControlNode(Node):
-    desired_p = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # desired thrust from pilot
-    desired_p_unramped = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # pilot thrust converted to PWM; TODO: eliminate?
-    desired_thrusters = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # ramped pilot PWM; TODO: naming
+    # Pilot input, as a tuple of [X, Y, Z, Ro, Pi, Ya]
+    desired_p = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
-    # TODO: not used?
-    # desired_thrust_final = [0, 0, 0, 0, 0, 0]
+    # Unramped PWM values for each thruster; TODO: eliminate?
+    unramped_thruster_pwm = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    final_thruster_pwm = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
     # TODO: not used?
     # disabled_list = [False, False, False, False, False, False, False, False]  # disabled thrusters
@@ -53,13 +53,8 @@ class ThrustControlNode(Node):
         self.on_loop()
 
     def on_loop(self):
-        for i in range(0, 6):
-            # self.desired_thrust_final[i] = self.desired_p[i]
-            pass
-
         # calculate thrust
-        # pwm_values = c.calculate(desired_thrust_final, disabled_list, False)
-        self.desired_p_unramped = [self.tm.thrust_to_pwm(val) for val in self.tm.thruster_output(self.desired_p)]
+        self.unramped_thruster_pwm = [self.tm.thrust_to_pwm(val) for val in self.tm.thruster_output(self.desired_p)]
 
         # invert relevant values
         # for i in range(8):
@@ -67,7 +62,6 @@ class ThrustControlNode(Node):
         #        pwm_values[i] = pwm_values[i] * (-1)
         for i in range(0, 8):
             self.ramp(i)
-        pwm_values = self.desired_thrusters  # TODO: temp variable assignment needed?
 
         # assign values to publisher messages for thrust control and status
         # val = float of range(-1, 1)
@@ -75,17 +69,17 @@ class ThrustControlNode(Node):
         # if uint8: (val + 1) * 127.5 will give 0 to 255
         thrusters = [127, 127, 127, 127, 127, 127, 127, 127]
         for i in range(0, 8):
-            thrusters[i] = int((pwm_values[i] + 1) * 127.5)
+            thrusters[i] = int((self.final_thruster_pwm[i] + 1) * 127.5)
             if thrusters[i] > 255:
                 thrusters[i] = 255
-            print(pwm_values)
+            print(self.final_thruster_pwm)
             print(thrusters)
 
         tcm = FinalThrustMsg()
         tcm.thrusters = bytearray(thrusters)
 
         tsm = ThrustStatusMsg()
-        tsm.status = pwm_values
+        tsm.status = self.final_thruster_pwm
 
         # publish data
         self.thrust_pub.publish(tcm)
@@ -98,15 +92,15 @@ class ThrustControlNode(Node):
         self.get_logger().info("changed" + str(msg.com[0]) + ":" + str(msg.com[1]) + ":" + str(msg.com[2]))
 
     def ramp(self, index):
-        if abs(self.desired_p_unramped[index] - self.desired_thrusters[index]) > MAX_CHANGE:
-            if self.desired_p_unramped[index] - self.desired_thrusters[index] > 0:
-                self.desired_thrusters[index] += MAX_CHANGE
+        if abs(self.unramped_thruster_pwm[index] - self.final_thruster_pwm[index]) > MAX_CHANGE:
+            if self.unramped_thruster_pwm[index] - self.final_thruster_pwm[index] > 0:
+                self.final_thruster_pwm[index] += MAX_CHANGE
                 # print(index, "ramping", desired_thrusters[index])
             else:
-                self.desired_thrusters[index] -= MAX_CHANGE
+                self.final_thruster_pwm[index] -= MAX_CHANGE
             return
         else:
-            self.desired_thrusters[index] = self.desired_p_unramped[index]
+            self.final_thruster_pwm[index] = self.unramped_thruster_pwm[index]
 
 
 def main(args=None):

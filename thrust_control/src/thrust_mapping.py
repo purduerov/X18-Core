@@ -110,7 +110,8 @@ class ThrustMapper:
 if __name__ == '__main__':
     # global oneiteration
     tm = ThrustMapper()  # for i in range(100):
-    desired_thrust_final = [0.1, 0, 0.0, 0, 0, 0]  # X Y Z Ro Pi Ya    
+    desired_thrust_final = [0.1, 0, 0.0, 0, 0, 0]  # X Y Z Ro Pi Ya
+
     # oneiteration = True
     pwm_values = tm.thruster_output(desired_thrust_final)
     result = np.matmul(tm.thruster_force_map, pwm_values)

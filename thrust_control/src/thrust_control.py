@@ -10,7 +10,7 @@ MAX_CHANGE = .15
 
 class ThrustControlNode(Node):
     desired_p = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # desired thrust from pilot
-    desired_p_unramped = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # pilot thrust converted to PWM
+    desired_p_unramped = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # pilot thrust converted to PWM; TODO: eliminate?
     desired_thrusters = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # ramped pilot PWM; TODO: naming
 
     # TODO: not used?

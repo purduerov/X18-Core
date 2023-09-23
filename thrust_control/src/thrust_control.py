@@ -9,7 +9,7 @@ MAX_CHANGE = .15
 
 
 class ThrustControlNode(Node):
-    # Pilot input, as a tuple of [X, Y, Z, Ro, Pi, Ya]
+    # Pilot input, as a tuple of [X, Y, Z, Roll, Pitch, Yaw]
     desired_p = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
     # Unramped PWM values for each thruster; TODO: eliminate?

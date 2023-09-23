@@ -2,7 +2,7 @@
 import rclpy
 from rclpy.node import Node
 
-from shared_msgs.msg import ThrustCommandMsg, RovVelocityCommand
+from shared_msgs.msg import ThrustCommandMsg, RovVelocityCommand, ImuVelocityCommand
 
 
 class ROVMainNode(Node):
@@ -13,13 +13,22 @@ class ROVMainNode(Node):
     mode_fine = True
     fine_multiplier = 1.041
 
+    imu_angle_lock_enable = True  # TODO: setting this
+    imu_velocity = [0.0, 0.0, 0.0]  # Tuple of [roll vel., pitch vel., yaw vel.]
+
     def __init__(self):
         super().__init__('ROV_main')
 
         self.controller_sub = self.create_subscription(
             RovVelocityCommand,
             '/rov_velocity',
-            self._velocity_input,
+            self._controller_input,
+            10
+        )
+        self.imu_control_sub = self.create_subscription(
+            ImuVelocityCommand,
+            'imu_vel_command',
+            self._imu_input,
             10
         )
         self.thrust_command_pub = self.create_publisher(ThrustCommandMsg, '/thrust_command', 10)
@@ -30,12 +39,17 @@ class ROVMainNode(Node):
         # Thruster Control
         thrust_command = ThrustCommandMsg()
         thrust_command.desired_thrust = self.controller_percent_power
+
+        # If set, override controller angular input with IMU PID loop values
+        if self.imu_angle_lock_enable:
+            thrust_command.desired_thrust[3:5] = self.imu_velocity
+
         thrust_command.is_fine = self.mode_fine
         thrust_command.multiplier = self.fine_multiplier
 
         self.thrust_command_pub.publish(thrust_command)
 
-    def _velocity_input(self, msg):
+    def _controller_input(self, msg):
         self.controller_percent_power[0] = msg.twist.linear.x
         self.controller_percent_power[1] = msg.twist.linear.y
         self.controller_percent_power[2] = msg.twist.linear.z
@@ -44,6 +58,9 @@ class ROVMainNode(Node):
         self.controller_percent_power[5] = msg.twist.angular.z
         self.mode_fine = msg.is_fine
         self.fine_multiplier = msg.multiplier
+
+    def _imu_input(self, msg):
+        self.imu_velocity = msg.angular
 
 
 def main(args=None):

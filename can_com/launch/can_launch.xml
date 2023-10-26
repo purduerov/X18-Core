@@ -1,3 +1,0 @@
-<launch>
-  <node pkg="can_com" exec="can_bus.py" namespace="rov"/>
-</launch>

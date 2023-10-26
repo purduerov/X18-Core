@@ -7,37 +7,40 @@ THRUST_MIN = -2.9
 
 X_COMP = np.sin(7 * np.pi / 18)
 Y_COMP = np.cos(7 * np.pi / 18)
-is_inverted = [True,False,True,True,False,False,True,False]
+is_inverted = [True, False, True, True, False, False, True, False]
+
+
 class ThrustMapper:
     def __init__(self):
-        
+
         self.com = np.array([0.0, 0.0, 0.2]) * SCALE
         self.location_frame_absolute = np.matrix([
-                      [8, 7.25, 4],  # Thruster 1
-                      [8, -7.25, -4],  # Thruster 2
-                      [8, 7.25, -4],  # Thruster 3
-                      [8, -7.25, 4],  # Thruster 4
-                      [-8, -7.25, -4],  # Thruster 5
-                      [-8, -7.25, 4],  # Thruster 6
-                      [-8, 7.25, 4],  # Thruster 7
-                      [-8, 7.25, -4]])  * SCALE  # Thruster 8
+            [8, 7.25, 4],  # Thruster 1
+            [8, -7.25, -4],  # Thruster 2
+            [8, 7.25, -4],  # Thruster 3
+            [8, -7.25, 4],  # Thruster 4
+            [-8, -7.25, -4],  # Thruster 5
+            [-8, -7.25, 4],  # Thruster 6
+            [-8, 7.25, 4],  # Thruster 7
+            [-8, 7.25, -4]
+        ]) * SCALE  # Thruster 8
+
         alpha = 30 * np.pi / 180.0
         beta = 25 * np.pi / 180.0
         x_comp = np.cos(alpha) * np.cos(beta)
         y_comp = np.sin(alpha) * np.cos(beta)
         z_comp = np.sin(beta)
 
-
         self.direction = np.matrix([
-                       [ -x_comp, -y_comp, -z_comp],  # Thruster 1
-                       [x_comp, y_comp, z_comp],  # Thruster 2
-                       [-x_comp,  y_comp, -z_comp],  # Thruster 3
-                       [ x_comp,  -y_comp, z_comp],  # Thruster 4
-                       [ x_comp, y_comp,  -z_comp],  # Thruster 5
-                       [x_comp, -y_comp,  -z_comp],  # Thruster 6
-                       [-x_comp,  -y_comp,  z_comp],  # Thruster 7
-                       [ -x_comp,  y_comp,  z_comp]  # Thruster 8
-                       ])
+            [-x_comp, -y_comp, -z_comp],  # Thruster 1
+            [x_comp, y_comp, z_comp],  # Thruster 2
+            [-x_comp, y_comp, -z_comp],  # Thruster 3
+            [x_comp, -y_comp, z_comp],  # Thruster 4
+            [x_comp, y_comp, -z_comp],  # Thruster 5
+            [x_comp, -y_comp, -z_comp],  # Thruster 6
+            [-x_comp, -y_comp, z_comp],  # Thruster 7
+            [-x_comp, y_comp, z_comp]  # Thruster 8
+        ])
 
         self.location = self.change_origin(0, 0, 0)
         self.torque = self.torque_values()
@@ -45,7 +48,7 @@ class ThrustMapper:
 
         self.fine = True
         self.multiplier = 1.041
-    
+
     def set_fine(self, nfine):
         self.fine = nfine
 
@@ -72,13 +75,13 @@ class ThrustMapper:
             psuedo_inv = np.linalg.pinv(self.thruster_force_map)
             force = np.matmul(psuedo_inv, output_needed)
             if self.fine:
-                force *= self.multiplier #1.041  # 3.7657  # Thrust envelop inscribed sphere radius
+                force *= self.multiplier  # 1.041  # 3.7657  # Thrust envelop inscribed sphere radius
             else:
                 scale_max = abs(THRUST_MAX / max(force))
                 scale_min = abs(THRUST_MIN / min(force))
                 force *= min(scale_max, scale_min)
-            for i in range(0,7):
-                if(is_inverted[i]):
+            for i in range(0, 7):
+                if is_inverted[i]:
                     force[i] *= -1.0
             return np.transpose(force).tolist()[0]
         return np.zeros(8)
@@ -106,10 +109,11 @@ class ThrustMapper:
 
 if __name__ == '__main__':
     # global oneiteration
-    tm = ThrustMapper()    # for i in range(100):
-    desired_thrust_final = [0.1, 0, 0.0, 0, 0, 0]  # X Y Z Ro Pi Ya    
+    tm = ThrustMapper()  # for i in range(100):
+    desired_thrust_final = [0.1, 0, 0.0, 0, 0, 0]  # X Y Z Ro Pi Ya
+
     # oneiteration = True
     pwm_values = tm.thruster_output(desired_thrust_final)
-    result = np.matmul(tm.thrusterForceMap, pwm_values)
+    result = np.matmul(tm.thruster_force_map, pwm_values)
     print(list(np.around(np.array(pwm_values), 2)))
     print(list(np.around(np.array(result), 2)))

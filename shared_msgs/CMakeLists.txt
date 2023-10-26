@@ -22,6 +22,7 @@ set(msg_files
   "msg/ComMsg.msg"
   "msg/FinalThrustMsg.msg"
   "msg/ImuMsg.msg"
+  "msg/ImuVelocityCommand.msg"
   "msg/RovVelocityCommand.msg"
   "msg/TempMsg.msg"
   "msg/ThrustCommandMsg.msg"

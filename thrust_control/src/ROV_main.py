@@ -10,7 +10,7 @@ class ROVMainNode(Node):
     # controller_tools_command = [0, 0, 0, 0]
     # translation_Scaling = 3.2
     # rotation_Scaling = 1.5
-    mode_fine = True
+    mode_fine = 0
     fine_multiplier = 1.041
 
     imu_angle_lock_enable = True  # TODO: setting this
@@ -42,7 +42,7 @@ class ROVMainNode(Node):
 
         # If set, override controller angular input with IMU PID loop values
         if self.imu_angle_lock_enable:
-            thrust_command.desired_thrust[3:5] = self.imu_velocity
+            thrust_command.desired_thrust[3:6] = self.imu_velocity
 
         thrust_command.is_fine = self.mode_fine
         thrust_command.multiplier = self.fine_multiplier

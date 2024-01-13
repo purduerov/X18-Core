@@ -1,0 +1,44 @@
+# import rclpy
+# import rclpy.node as Node
+from spidev import SpiDev
+# from shared_msgs.msg import FinalThrustMsg
+import signal
+
+import time
+
+spi = SpiDev()
+spi.open(0, 1)
+
+off_thrust = [127,127,127,127,127,127,127,127]
+
+def interrupt():
+    publish = bytearray(off_thrust)
+    spi.writebytes(publish)
+    spi.close()
+
+def send_message(data):
+    publish = bytearray(data)
+    spi.writebytes(publish)
+    
+if __name__ == "__main__":
+    signal.signal(signal.SIGINT, interrupt) # setup custom handler for interrupt
+    data = [127,127,127,127,127,127,127,127]
+
+    while (1):
+        send_message(data)
+        if data[0] < 255:
+            [x + 1 for x in data]
+        time.sleep(1)
+    '''
+    rclpy.init() # initialize ros
+    node = rclpy.create_node('thrust_to_spi') # create a node 
+    sub = node.create_subscription( # subscribe to final thrust
+                                    FinalThrustMsg,
+                                    'final_thrust',
+
+                                    )
+    
+    rclpy.spin(node)
+    node.destroy_node() # terminates the node
+    rclpy.shutdown() 
+    '''

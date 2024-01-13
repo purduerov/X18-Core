@@ -1,57 +1,69 @@
 #! /usr/bin/python3
-import rclpy
-import rclpy.node as Node
-from spidev import SpiDev
-from shared_msgs.msg import CanMsg, FinalThrustMsg, TempMsg
 import signal
 
-spi = SpiDev()
-spi.open(0, 1) # bus,device
+import rclpy
+from rclpy.node import Node
+from spidev import SpiDev
 
-prev_thrust = [127,127,127,127,127,127,127,127]  # power of thrusters --> 127 is neutral
-zero_thrust = [127,127,127,127,127,127,127,127]  # power of thrusters --> 127 is neutral
+from shared_msgs.msg import FinalThrustMsg
 
-spi.max_speed_hz = 50000
+zero_thrust = [127, 127, 127, 127, 127, 127, 127, 127]  # power of thrusters --> 127 is neutral
 
-def handler(signum, frame): #called when ctrl-C interrupt is detected
-    global zero_thrust
-    print('Ctrl-C detected')
-    publish = bytearray(zero_thrust)
-    #print(publish)
-    spi.writebytes(publish)
-    spi.close()
 
-def message_received(msg): #called in subscription object initialization
-    if checkChange(msg): #if the message has changed publish the new message
-        publish = list(msg.thrusters)
-        publish = bytearray(publish)
-        #print(publish)
-        spi.writebytes(publish)
+class ThrustToSPINode(Node):
+    prev_thrust = [127, 127, 127, 127, 127, 127, 127, 127]  # power of thrusters --> 127 is neutral
 
-def checkChange(new_msg):
-    global prev_thrust
-    new_thrust = list(new_msg.thrusters)
-    #if value is unchanged, returns false to skip publish
-    if prev_thrust == new_thrust:
-        return False
-    else:
-        prev_thrust = new_thrust.copy()
-        return True
+    def __init__(self):
+        super().__init__('thrust_to_spi')
 
-if __name__ == "__main__":
+        self.spi = SpiDev()
+        self.spi.open(0, 1)  # bus,device
+        self.spi.max_speed_hz = 50000
 
-    signal.signal(signal.SIGINT, handler)
-    rclpy.init() #initializes ros communication
+        # Subscribe to final_thrust and start callback function
+        self.sub = self.create_subscription(
+            FinalThrustMsg,
+            'final_thrust',
+            self.message_received,
+            10
+        )
 
-    node = rclpy.create_node('thrust_to_spi') #creates an instance of a node with name thrust_proc
+        signal.signal(signal.SIGINT, self.handler)
 
-    # Subscribe to final_thrust and start callback function
-    sub = node.create_subscription(
-                                    FinalThrustMsg, 
-                                    'final_thrust',
-                                    message_received, 
-                                    10)
+    def message_received(self, msg):  # called in subscription object initialization
+        if self.check_change(msg):  # if the message has changed publish the new message
+            publish = list(msg.thrusters)
+            publish = bytearray(publish)
+
+            self.spi.writebytes(publish)
+
+    def check_change(self, new_msg):
+        new_thrust = list(new_msg.thrusters)
+
+        # if value is unchanged, returns false to skip publish
+        if self.prev_thrust == new_thrust:
+            return False
+        else:
+            self.prev_thrust = new_thrust.copy()
+            return True
+
+    def handler(self, signum, frame):  # called when ctrl-C interrupt is detected
+        print('Ctrl-C detected')
+        publish = bytearray(zero_thrust)
+        # print(publish)
+        self.spi.writebytes(publish)
+        self.spi.close()
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = ThrustToSPINode()
 
     rclpy.spin(node)
+
     node.destroy_node()
     rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()

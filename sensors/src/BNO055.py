@@ -11,17 +11,16 @@ class BNO055(object):
 
         self._data = {
             'euler': {
-                # Resolution found from a forumn post
-                'yaw': 0,  # Rotation about z axis (vertical) +/- 0.01 degree
-                'roll': 0,  # Rotation about y axix (perpindicular to the pins IMU) +/- 0.01 degree
-                'pitch': 0,  # Rotation about x axis (parallel to the pins of IMU) +/- 0.01 degree
-
+                # Resolution found from a forum post
+                'yaw': 0,  # Rotation about z-axis (vertical) +/- 0.01 degree
+                'roll': 0,  # Rotation about y-axis (perpendicular to the pins IMU) +/- 0.01 degree
+                'pitch': 0,  # Rotation about x-axis (parallel to the pins of IMU) +/- 0.01 degree
             },
             'quat': {
-                'x':0,
-                'y':0,
-                'z':0,
-                'w':0
+                'x': 0,
+                'y': 0,
+                'z': 0,
+                'w': 0
             },
             'gyro': {
                 'x': 0,  # 3e-2 degree/sec
@@ -62,16 +61,21 @@ class BNO055(object):
 
     def gyro_z(self):
         return self._data['gyro']['z']
+
     def quat_x(self):
         return self._data['quat']['x']
+
     def quat_y(self):
         return self._data['quat']['y']
+
     def quat_z(self):
         return self._data['quat']['z']
+
     def quat_w(self):
         return self._data['quat']['w']
+
     def quat_arr(self):
-        return [self.quat_x(),self.quat_y(),self.quat_z(),self.quat_w()]
+        return [self.quat_x(), self.quat_y(), self.quat_z(), self.quat_w()]
 
     def acceleration_x(self):
         return self._data['acceleration']['x']
@@ -109,8 +113,6 @@ class BNO055(object):
             self._data['quat']['z'] = quat[2]
         if quat[3] is not None:
             self._data['quat']['w'] = quat[3]
-        
-
 
         if euler[0] is not None:
             self._data['euler']['yaw'] = euler[0]
@@ -160,13 +162,14 @@ class BNO055(object):
     # def set_calibration(self, data):
     #     self._bno.set_calibration(data)
 
+
 if __name__ == '__main__':
     def main():
         sensor = BNO055()
 
         # We must initialize the sensor before reading it
         if not sensor:
-            print ("Sensor could not be initialized")
+            print("Sensor could not be initialized")
             exit(1)
 
         print("Time \tRoll \tPitch \tYaw \tGyro: \tx \ty \tz \tACC: \tx \ty \tz \tLinear: \tx \ty \tz")
@@ -174,25 +177,26 @@ if __name__ == '__main__':
         # Spew readings
         while True:
             if sensor.update():
-                print("%s \t%0.2f \t%0.2f \t%0.2f \t\t%0.2f \t%0.2f \t%0.2f \t\t%0.2f \t%0.2f \t%0.2f \t\t%0.2f \t%0.2f \t%0.2f") % (
-                     time.strftime("%H:%M:%S", time.localtime()) + '.%d' % (time.time() % 1 * 1000),
-                     sensor.roll(),
-                     sensor.pitch(),
-                     sensor.yaw(),
-                     sensor.gyro_x(),
-                     sensor.gyro_y(),
-                     sensor.gyro_z(),
-                     sensor.acceleration_x(),
-                     sensor.acceleration_y(),
-                     sensor.acceleration_z(),
-                     sensor.linear_acceleration_x(),
-                     sensor.linear_acceleration_y(),
-                     sensor.linear_acceleration_z())
+                print(
+                    "%s \t%0.2f \t%0.2f \t%0.2f \t\t%0.2f \t%0.2f \t%0.2f \t\t%0.2f \t%0.2f \t%0.2f \t\t%0.2f \t%0.2f \t%0.2f") % (
+                    time.strftime("%H:%M:%S", time.localtime()) + '.%d' % (time.time() % 1 * 1000),
+                    sensor.roll(),
+                    sensor.pitch(),
+                    sensor.yaw(),
+                    sensor.gyro_x(),
+                    sensor.gyro_y(),
+                    sensor.gyro_z(),
+                    sensor.acceleration_x(),
+                    sensor.acceleration_y(),
+                    sensor.acceleration_z(),
+                    sensor.linear_acceleration_x(),
+                    sensor.linear_acceleration_y(),
+                    sensor.linear_acceleration_z()
+                )
 
                 time.sleep(0.005)
             else:
-                print ("Sensor read failed!")
+                print("Sensor read failed!")
                 exit(1)
-
 
     main()

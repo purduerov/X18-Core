@@ -17,8 +17,8 @@ MAX_CHANGE = .15
 # z rot ability is capped at 5.39 kgf-m physically
 
 class multiplier(Enum):
-    standard = 0
-    fine = 1
+    fine = 0
+    standard = 1
     yeet = 2
     
 class reference_frame(Enum):
@@ -26,9 +26,9 @@ class reference_frame(Enum):
     spatial = 1
 
 #[x trans, y trans, z trans, x rot, y rot, z rot]
-fine_multiplier = [1.5, 1.5, 1.5, 0.2, 1.0, 1.0]
-std_multiplier = [3, 3, 3, 0.4, 2.0, 2.0]
-yeet_multiplier = [15, 10, 10, 0.5, 3.5, 4.5]
+fine_multiplier = [1.0, 1.0, 1.0, 0.2, 0.6, 0.4]
+std_multiplier = [1.5, 1.5, 1.5, 0.2, 1.0, 1.0]
+yeet_multiplier = [3, 3, 3, 0.4, 2.0, 2.0]
 
 class ThrustControlNode(Node):
     def __init__(self):
@@ -55,12 +55,10 @@ class ThrustControlNode(Node):
         self.orientation_matrix = np.identity(3)
 
         self.power_mode = multiplier.standard
-        self.frame = reference_frame.spatial
+        self.frame = reference_frame.body
 
     def _pilot_command(self, data):
         self.desired_effort = data.desired_thrust
-        self.tm.set_multiplier(data.multiplier)
-        
         self.power_mode =  data.is_fine
 
         self.on_loop()
@@ -100,16 +98,19 @@ class ThrustControlNode(Node):
             
         if self.power_mode == multiplier.fine: #convert from normalized %effort to 
             self.desired_effort = self.desired_effort * fine_multiplier
-        elif self.power_mode == multiplier.yeet:
-            self.desired_effort = self.desired_effort * yeet_multiplier
-        else:
+        elif self.power_mode == multiplier.standard:
             self.desired_effort = self.desired_effort * std_multiplier
+        else:
+            self.desired_effort = self.desired_effort * yeet_multiplier
+        self.get_logger().info("desired_effort: " + str(self.desired_effort))
 
         # calculate thrust
         self.desired_thrusters_unramped = [self.tm.thrust_to_pwm(val) for val in self.tm.thruster_output(self.desired_effort)]
 
         self.ramp(self.desired_thrusters_unramped)
         pwm_values = self.desired_thrusters
+        self.get_logger().info("pwm: " + str(pwm_values))
+
 
         thrusters = [127, 127, 127, 127, 127, 127, 127, 127]
         for i in range(0, 8):
@@ -138,7 +139,7 @@ class ThrustControlNode(Node):
                     self.desired_thrusters[index] += MAX_CHANGE
                 else:
                     self.desired_thrusters[index] -= MAX_CHANGE
-                return
+                #return
             else:
                 self.desired_thrusters[index] = unramped_thrusters[index]
 

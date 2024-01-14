@@ -43,7 +43,7 @@ class ThrustControlNode(Node):
         self.command_sub = self.create_subscription(ThrustCommandMsg, '/thrust_command', self._pilot_command, 10)
         self.com_sub = self.create_subscription(ComMsg, 'com_tweak', self._com_update, 10)
         #assume IMU measurements in Roll-Pitch-Yaw
-        self.rotation_sub = self.create_subscription(ImuMsg, 'imu', self._orientation_update, 10)
+        #self.rotation_sub = self.create_subscription(ImuMsg, 'imu', self._orientation_update, 10)
 
 
         #initialize thrust arrays
@@ -60,6 +60,11 @@ class ThrustControlNode(Node):
     def _pilot_command(self, data):
         self.desired_effort = data.desired_thrust
         self.power_mode =  data.is_fine
+        if data.is_pool_centric:
+            #self.frame = reference_frame.spatial
+            pass
+        else:
+            self.frame = reference_frame.body
 
         self.on_loop()
         

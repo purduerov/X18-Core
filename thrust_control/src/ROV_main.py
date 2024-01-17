@@ -11,14 +11,13 @@ class ROVMainNode(Node):
     # translation_Scaling = 3.2
     # rotation_Scaling = 1.5
     mode_fine = 0
-    fine_multiplier = 1.041
 
     imu_angle_lock_enable = True  # TODO: setting this
     imu_velocity = [0.0, 0.0, 0.0]  # Tuple of [roll vel., pitch vel., yaw vel.]
 
     def __init__(self):
         super().__init__('ROV_main')
-
+        
         self.controller_sub = self.create_subscription(
             RovVelocityCommand,
             '/rov_velocity',
@@ -34,6 +33,8 @@ class ROVMainNode(Node):
         self.thrust_command_pub = self.create_publisher(ThrustCommandMsg, '/thrust_command', 10)
 
         self.timer = self.create_timer(1 / 50.0, self.on_loop)
+        self.is_pool_centric = False
+
 
     def on_loop(self):
         # Thruster Control
@@ -45,7 +46,7 @@ class ROVMainNode(Node):
             thrust_command.desired_thrust[3:6] = self.imu_velocity
 
         thrust_command.is_fine = self.mode_fine
-        thrust_command.multiplier = self.fine_multiplier
+        thrust_command.is_pool_centric = self.is_pool_centric
 
         self.thrust_command_pub.publish(thrust_command)
 
@@ -57,7 +58,7 @@ class ROVMainNode(Node):
         self.controller_percent_power[4] = msg.twist.angular.y
         self.controller_percent_power[5] = msg.twist.angular.z
         self.mode_fine = msg.is_fine
-        self.fine_multiplier = msg.multiplier
+        self.is_pool_centric = msg.is_pool_centric
 
     def _imu_input(self, msg):
         self.imu_velocity = msg.angular

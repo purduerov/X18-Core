@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="thrust_control" exec="ROV_main.py" namespace="rov"/>
+  <node pkg="thrust_control" exec="thrust_control.py" namespace="rov"/>
+</launch>

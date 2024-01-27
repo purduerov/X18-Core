@@ -19,9 +19,8 @@ install(PROGRAMS
   src/ROV_main.py
   src/thrust_control.py
   src/thrust_mapping.py
-  src/thrust_to_can.py
   src/thrust_to_spi.py
-  src/thrust_to_pwm.py
+  src/MY_SPI.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

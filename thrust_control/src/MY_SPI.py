@@ -15,6 +15,7 @@ class ThrustToSPINode(Node):
     ZERO_THRUST = [127, 127, 127, 127, 127, 127, 127, 127]  # power of thrusters --> 127 is neutral
     FULL_THRUST_CONTROL = 2
     identifier = 0
+    blocked = False
     
     def __init__(self, bus=0, device=1, mode=0, speed=50000, bits_per_word=8):
         super().__init__('thrust_to_spi')
@@ -38,11 +39,12 @@ class ThrustToSPINode(Node):
 
     def message_received(self, msg):  # called in subscription object initialization
         print("RECEIVED")
-        self.type = self.FULL_THRUST_CONTROL
-        self.set_message_id()
-        self.thrusters = msg.thrusters # msg is a class containing thruster numpy array
-        response = self.transfer(self.format_message())
-        self.response_handler(response)
+        if (not self.blocked):    
+            self.type = self.FULL_THRUST_CONTROL
+            self.set_message_id()
+            self.thrusters = msg.thrusters # msg is a class containing thruster numpy array
+            response = self.transfer(self.format_message())
+            self.response_handler(response)
         return
 
     # sets id to an incremented 2-byte number
@@ -76,7 +78,9 @@ class ThrustToSPINode(Node):
     
     def transfer(self, message):
         print("MASTER: ", list(message))
-        response = self.spi.xfer3(message)
+        response = ()
+        if (not self.blocked):
+            response = self.spi.xfer3(message)
         return response
     
     # TODO: HOW TO USE THIS???
@@ -86,18 +90,17 @@ class ThrustToSPINode(Node):
 
     # TODO: MESSAGES CAN STILL BE SENT AFTER HANDLER IS CALLED, FIGURE HOW TO PREVENT SENDING OF MESSAGES
     def handler(self, signum, frame):  # called when ctrl-C interrupt is detected
+        self.blocked = True
         print('Ctrl-C detected')
-        '''
-        publish = bytearray(zero_thrust)
-        # print(publish)
-        self.spi.writebytes(publish)
-        self.spi.close()
-        '''
         self.type = self.FULL_THRUST_CONTROL
         self.identifier = 0
         self.thrusters = self.ZERO_THRUST
-        response = self.transfer(self.format_message())
+        message = self.format_message()
+        print("MASTER: ", list(message))
+        self.spi.xfer3(message)
         self.spi.close()
+        print('Closed')
+        return
 
 
 def main(args=None):

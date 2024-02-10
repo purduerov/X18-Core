@@ -72,7 +72,7 @@ class ThrustControlNode(Node):
         self.tm.location = self.tm.change_origin(msg.com[0], msg.com[1], msg.com[2])
         self.tm.torque = self.tm.torque_values()
         self.tm.thruster_force_map = self.tm.thruster_force_map_values()
-        self.get_logger().info("changed" + str(msg.com[0]) + ":" + str(msg.com[1]) + ":" + str(msg.com[2]))
+      #  self.get_logger().info("changed" + str(msg.com[0]) + ":" + str(msg.com[1]) + ":" + str(msg.com[2]))
         
     def _orientation_update(self, msg):
         rot_x = np.array([[1.0, 0.0, 0.0],
@@ -84,7 +84,7 @@ class ThrustControlNode(Node):
         #I can never keep roll-pitch-yaw to rotation matrix straight, 
         #used this source https://msl.cs.uiuc.edu/planning/node102.html
         self.orientation_matrix = np.matmul(rot_y, rot_x)
-        self.get_logger().info("rotation matrix: " + str(self.orientation_matrix))
+     #   self.get_logger().info("rotation matrix: " + str(self.orientation_matrix))
 
     def on_loop(self):
         global fine_multiplier, std_multiplier, yeet_multiplier
@@ -94,7 +94,7 @@ class ThrustControlNode(Node):
             translational_effort = self.orientation_matrix.dot(translational_effort)
 
             self.desired_effort[0:3] = translational_effort
-            self.get_logger().info("desired_effort effort: " + str(self.desired_effort))
+          #  self.get_logger().info("desired_effort effort: " + str(self.desired_effort))
 
         
         #desired_effort is 6 value vector of trans xyz, rot xyz
@@ -107,14 +107,14 @@ class ThrustControlNode(Node):
             self.desired_effort = self.desired_effort * std_multiplier
         else:
             self.desired_effort = self.desired_effort * yeet_multiplier
-        self.get_logger().info("desired_effort: " + str(self.desired_effort))
+      #  self.get_logger().info("desired_effort: " + str(self.desired_effort))
 
         # calculate thrust
         self.desired_thrusters_unramped = [self.tm.thrust_to_pwm(val) for val in self.tm.thruster_output(self.desired_effort)]
 
         self.ramp(self.desired_thrusters_unramped)
         pwm_values = self.desired_thrusters
-        self.get_logger().info("pwm: " + str(pwm_values))
+       # self.get_logger().info("pwm: " + str(pwm_values))
 
 
         thrusters = [127, 127, 127, 127, 127, 127, 127, 127]

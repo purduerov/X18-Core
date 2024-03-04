@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+import signal
 import time
 import rclpy
 from rclpy.node import Node
@@ -7,10 +8,11 @@ from crccheck.crc import Crc32Mpeg2
 
 import RPi.GPIO as GPIO
 
-from shared_msgs.msg import FinalThrustMsg
+from shared_msgs.msg import FinalThrustMsg, MotorMsg
 
 class ThrustToSPINode(Node):
     ZERO_THRUST = [127, 127, 127, 127, 127, 127, 127, 127]  # power of thrusters --> 127 is neutral
+    ZERO_TOOLS = [127, 127, 127, 127]
     FULL_THRUST_CONTROL = 2
     identifier = 0
     blocked = False
@@ -26,6 +28,7 @@ class ThrustToSPINode(Node):
         self.spi.bits_per_word = bits_per_word
         
         self.thrusters = [127] * 8
+        self.tool_motors = [127] * 4
 
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(24, GPIO.OUT, initial=GPIO.HIGH)
@@ -37,8 +40,14 @@ class ThrustToSPINode(Node):
             self.thrust_received,
             10
         )
-        
-        return
+        self.sub = self.create_subscription(
+            MotorMsg,
+            'motor_control',
+            self.tools_received,
+            10
+        )
+
+        # signal.signal(signal.SIGINT, self.handler)
 
     def thrust_received(self, msg):
         print("THRUSTER RECEIVED")
@@ -46,7 +55,13 @@ class ThrustToSPINode(Node):
         self.message_received()
         return
 
-    def message_received(self):  # called in subscription object initialization
+    def tools_received(self, msg):
+        print("TOOLS RECEIVED")
+        self.tool_motors = msg.tool
+        self.message_received()
+        return
+
+    def message_received(self, msg):  # called in subscription object initialization
         if (not self.blocked):    
             self.type = self.FULL_THRUST_CONTROL
             self.set_message_id()
@@ -75,7 +90,7 @@ class ThrustToSPINode(Node):
     def format_message(self):
         split_id = self.split_bytes(self.identifier)
         type_list = [self.type]
-        message = list(type_list) + list(split_id) + list(self.thrusters)
+        message = list(type_list) + list(split_id) + list(self.thrusters) + list(self.tool_motors)
         self.compute_crc(message)
         split_crc = self.split_bytes(self.crc)
         split_crc = self.swap_bytes(split_crc)
@@ -105,11 +120,12 @@ class ThrustToSPINode(Node):
             GPIO.output(24, GPIO.HIGH)
         return response
     
+    # TODO: NEED TO TEST THIS PART
     def response_handler(self, response):
         print("1st SLAVE: ", response)
         if (not self.blocked):
             time.sleep(0.0001)
-            message = [0] * 13
+            message = [0] * 17
             GPIO.output(24, GPIO.LOW)
             response = self.spi.xfer3(bytearray(message))
             GPIO.output(24, GPIO.HIGH)
@@ -122,6 +138,7 @@ class ThrustToSPINode(Node):
         self.type = self.FULL_THRUST_CONTROL
         self.identifier = 0
         self.thrusters = self.ZERO_THRUST
+        self.tool_motors = self.ZERO_TOOLS
         message = self.format_message()
         print("MASTER: ", list(message))
         self.spi.xfer3(message)
@@ -130,17 +147,50 @@ class ThrustToSPINode(Node):
         print('Closed')
         exit(1)
 
+class msg():
+    def __init__(self, thrust):
+        self.thrusters = [thrust] * 8
+        self.tools = [thrust % 128] * 4
+
 def main(args=None):
     rclpy.init(args=args)
     node = ThrustToSPINode()
 
+    #rclpy.spin(node)
+    
     try:
-        rclpy.spin(node)
+        thruster = 127
+        offset = 0
+        increment = 2
+        bound = 25
+        while True:
+            GPIO.output(24, GPIO.LOW)
+            GPIO.output(24, False)
+
+            message = msg(thrust=thruster)
+            node.message_received(message)
+
+            GPIO.output(24, GPIO.HIGH)
+            GPIO.output(24, True)
+
+            
+            if offset >= bound:
+                increment = -2
+            elif offset <= -bound:
+                increment = 2
+
+            offset += increment
+            thruster = 127 + offset
+
+            time.sleep(0.0001)
+                
+            
     except KeyboardInterrupt:
         node.handler()
 
     node.destroy_node()
     rclpy.shutdown()
+
 
 if __name__ == "__main__":
     main()

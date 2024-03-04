@@ -61,7 +61,7 @@ class ThrustToSPINode(Node):
         self.message_received()
         return
 
-    def message_received(self, msg):  # called in subscription object initialization
+    def message_received(self):  # called in subscription object initialization
         if (not self.blocked):    
             self.type = self.FULL_THRUST_CONTROL
             self.set_message_id()
@@ -150,41 +150,14 @@ class ThrustToSPINode(Node):
 class msg():
     def __init__(self, thrust):
         self.thrusters = [thrust] * 8
-        self.tools = [thrust % 128] * 4
+        self.tools = [thrust] * 4
 
 def main(args=None):
     rclpy.init(args=args)
     node = ThrustToSPINode()
 
-    #rclpy.spin(node)
-    
     try:
-        thruster = 127
-        offset = 0
-        increment = 2
-        bound = 25
-        while True:
-            GPIO.output(24, GPIO.LOW)
-            GPIO.output(24, False)
-
-            message = msg(thrust=thruster)
-            node.message_received(message)
-
-            GPIO.output(24, GPIO.HIGH)
-            GPIO.output(24, True)
-
-            
-            if offset >= bound:
-                increment = -2
-            elif offset <= -bound:
-                increment = 2
-
-            offset += increment
-            thruster = 127 + offset
-
-            time.sleep(0.0001)
-                
-            
+        rclpy.spin(node)
     except KeyboardInterrupt:
         node.handler()
 

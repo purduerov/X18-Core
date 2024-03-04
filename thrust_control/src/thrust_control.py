@@ -2,6 +2,7 @@
 import rclpy
 from rclpy.node import Node
 
+
 from shared_msgs.msg import FinalThrustMsg, ThrustStatusMsg, ThrustCommandMsg, ComMsg, ImuMsg
 from thrust_mapping import ThrustMapper
 import numpy as np
@@ -38,6 +39,8 @@ class ThrustControlNode(Node):
         # initialize publishers
         self.thrust_pub = self.create_publisher(FinalThrustMsg, 'final_thrust', 10)
         self.status_pub = self.create_publisher(ThrustStatusMsg, 'thrust_status', 10)
+
+        self.tools_pub = self.create_publisher(MotorMsg, 'motor_control', 10) # TODO: ADD THIS PART
 
         # initialize subscribers
         self.command_sub = self.create_subscription(ThrustCommandMsg, '/thrust_command', self._pilot_command, 10)
@@ -132,6 +135,10 @@ class ThrustControlNode(Node):
 
         tsm = ThrustStatusMsg()
         tsm.status = pwm_values
+
+        tlm = MotorMsg() # TODO: ADDED THIS PART
+        tools = [127, 127, 127, 127]
+        tlm.tools = tools
 
         # publish data
         self.thrust_pub.publish(tcm)

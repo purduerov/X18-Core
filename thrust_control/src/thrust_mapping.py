@@ -1,59 +1,43 @@
 import numpy as np
 
-SCALE = 0.0254
+SCALE = 0.0254 #converts inches to meters
 
-THRUST_MAX = 3.71
-THRUST_MIN = -2.9
-
-X_COMP = np.sin(7 * np.pi / 18)
-Y_COMP = np.cos(7 * np.pi / 18)
-is_inverted = [True, False, True, True, False, False, True, False]
+THRUST_MAX = 3.71 #kg f
+THRUST_MIN = -2.92 #kg f
 
 
 class ThrustMapper:
     def __init__(self):
-
-        self.com = np.array([0.0, 0.0, 0.2]) * SCALE
-        self.location_frame_absolute = np.matrix([
-            [8, 7.25, 4],  # Thruster 1
-            [8, -7.25, -4],  # Thruster 2
-            [8, 7.25, -4],  # Thruster 3
-            [8, -7.25, 4],  # Thruster 4
-            [-8, -7.25, -4],  # Thruster 5
-            [-8, -7.25, 4],  # Thruster 6
-            [-8, 7.25, 4],  # Thruster 7
-            [-8, 7.25, -4]
-        ]) * SCALE  # Thruster 8
-
+        self.com = np.array([0.0, 0.0, 0.0]) * SCALE
+        x_pos = 7.92 # values in inches
+        y_pos = 7.00 # values in inches
+        z_pos = 4.33 # values in inches
+        self.location_frame_absolute = np.matrix([[x_pos, y_pos, z_pos],  # Thruster 1
+                                                  [-x_pos, y_pos, z_pos],  # Thruster 2
+                                                  [-x_pos, -y_pos, z_pos],  # Thruster 3
+                                                  [x_pos, -y_pos, z_pos],  # Thruster 4
+                                                  [x_pos, y_pos, -z_pos],  # Thruster 5
+                                                  [-x_pos, y_pos, -z_pos],  # Thruster 6
+                                                  [-x_pos, -y_pos, -z_pos],  # Thruster 7
+                                                  [x_pos, -y_pos, -z_pos]]) * SCALE  # Thruster 8
         alpha = 30 * np.pi / 180.0
         beta = 25 * np.pi / 180.0
         x_comp = np.cos(alpha) * np.cos(beta)
         y_comp = np.sin(alpha) * np.cos(beta)
         z_comp = np.sin(beta)
 
-        self.direction = np.matrix([
-            [-x_comp, -y_comp, -z_comp],  # Thruster 1
-            [x_comp, y_comp, z_comp],  # Thruster 2
-            [-x_comp, y_comp, -z_comp],  # Thruster 3
-            [x_comp, -y_comp, z_comp],  # Thruster 4
-            [x_comp, y_comp, -z_comp],  # Thruster 5
-            [x_comp, -y_comp, -z_comp],  # Thruster 6
-            [-x_comp, -y_comp, z_comp],  # Thruster 7
-            [-x_comp, y_comp, z_comp]  # Thruster 8
-        ])
+        self.direction = np.matrix([[x_comp, -y_comp, -z_comp],  # Thruster 1
+                                    [-x_comp, -y_comp, -z_comp],  # Thruster 2
+                                    [-x_comp, y_comp, -z_comp],  # Thruster 3
+                                    [x_comp, y_comp, -z_comp],  # Thruster 4
+                                    [x_comp, -y_comp, z_comp],  # Thruster 5
+                                    [-x_comp, -y_comp, z_comp],  # Thruster 6
+                                    [-x_comp, y_comp, z_comp],  # Thruster 7
+                                    [x_comp, y_comp, z_comp]])  # Thruster 8
 
         self.location = self.change_origin(0, 0, 0)
         self.torque = self.torque_values()
         self.thruster_force_map = self.thruster_force_map_values()
-
-        self.fine = True
-        self.multiplier = 1.041
-
-    def set_fine(self, nfine):
-        self.fine = nfine
-
-    def set_multiplier(self, nmul):
-        self.multiplier = nmul
 
     def change_origin(self, x, y, z):
         return self.location_frame_absolute - self.com + np.array([x, y, z]) * SCALE
@@ -67,22 +51,18 @@ class ThrustMapper:
 
     def thruster_output(self, desired_force):
         if not np.array_equal(desired_force, np.zeros(6)):
-            if np.linalg.norm(desired_force) > 1.5:
-                desired_force /= np.linalg.norm(desired_force)
-                desired_force *= 1.5
-
+            
             output_needed = np.transpose(np.array((desired_force,), dtype=np.float))
             psuedo_inv = np.linalg.pinv(self.thruster_force_map)
             force = np.matmul(psuedo_inv, output_needed)
-            if self.fine:
-                force *= self.multiplier  # 1.041  # 3.7657  # Thrust envelop inscribed sphere radius
+
+            if max(force) < THRUST_MAX and min(force) > THRUST_MIN:
+                pass
             else:
                 scale_max = abs(THRUST_MAX / max(force))
                 scale_min = abs(THRUST_MIN / min(force))
                 force *= min(scale_max, scale_min)
-            for i in range(0, 7):
-                if is_inverted[i]:
-                    force[i] *= -1.0
+
             return np.transpose(force).tolist()[0]
         return np.zeros(8)
 
@@ -110,10 +90,7 @@ class ThrustMapper:
 if __name__ == '__main__':
     # global oneiteration
     tm = ThrustMapper()  # for i in range(100):
-    desired_thrust_final = [0.1, 0, 0.0, 0, 0, 0]  # X Y Z Ro Pi Ya
-
+    desired_thrust_final = [1, 0.0, 1, 0.0, 0.0, 0.0]  # X Y Z Ro Pi Ya
     # oneiteration = True
     pwm_values = tm.thruster_output(desired_thrust_final)
     result = np.matmul(tm.thruster_force_map, pwm_values)
-    print(list(np.around(np.array(pwm_values), 2)))
-    print(list(np.around(np.array(result), 2)))

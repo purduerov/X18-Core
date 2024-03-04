@@ -8,7 +8,7 @@ from crccheck.crc import Crc32Mpeg2
 
 import RPi.GPIO as GPIO
 
-from shared_msgs.msg import FinalThrustMsg, MotorMsg
+from shared_msgs.msg import FinalThrustMsg, ToolsCommandMsg
 
 class ThrustToSPINode(Node):
     ZERO_THRUST = [127, 127, 127, 127, 127, 127, 127, 127]  # power of thrusters --> 127 is neutral
@@ -41,8 +41,8 @@ class ThrustToSPINode(Node):
             10
         )
         self.sub = self.create_subscription(
-            MotorMsg,
-            'motor_control',
+            ToolsCommandMsg,
+            'tools_control',
             self.tools_received,
             10
         )
@@ -122,7 +122,7 @@ class ThrustToSPINode(Node):
     
     # TODO: NEED TO TEST THIS PART
     def response_handler(self, response):
-        print("1st SLAVE: ", response)
+        #print("1st SLAVE: ", response)
         if (not self.blocked):
             time.sleep(0.0001)
             message = [0] * 17

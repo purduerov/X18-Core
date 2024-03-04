@@ -28,11 +28,11 @@ class ThrustToSPINode(Node):
         self.thrusters = [127] * 8
 
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(24, GPIO.OUT, initial=GPIO.HIGH)
+        GPIO.setup(24, GPIO.OUT, initial=GPIO.HIGH) # CE0,CE1 is 7,8; PINS 24 and 26
 
         # Subscribe to final_thrust and start callback function
         self.sub = self.create_subscription(
-            FinalThrustMsg, # updated 50 times per second, called each time regardless of no change
+            FinalThrustMsg, # updated ~50 times per second, called each time regardless of no change
             'final_thrust',
             self.thrust_received,
             10
@@ -141,6 +141,7 @@ def main(args=None):
 
     node.destroy_node()
     rclpy.shutdown()
+    GPIO.cleanup()
 
 if __name__ == "__main__":
     main()

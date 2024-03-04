@@ -1,5 +1,5 @@
 #! /usr/bin/python3
-import signal
+
 import time
 import rclpy
 from rclpy.node import Node
@@ -27,11 +27,13 @@ class ThrustToSPINode(Node):
         self.spi.max_speed_hz = speed
         self.spi.bits_per_word = bits_per_word
         
-        self.thrusters = [127] * 8
-        self.tool_motors = [127] * 4
+        self.thrusters = ZERO_THRUST
+        self.tools = ZERO_TOOLS
+        self.pin = 8 # verify that this is the correct chip-select pin: CE0 (P24, G8), CE1 (P26, G7)
 
+        GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(24, GPIO.OUT, initial=GPIO.HIGH)
+        GPIO.setup(self.pin, GPIO.OUT, initial=GPIO.HIGH)
 
         # Subscribe to final_thrust and start callback function
         self.sub = self.create_subscription(
@@ -57,7 +59,7 @@ class ThrustToSPINode(Node):
 
     def tools_received(self, msg):
         print("TOOLS RECEIVED")
-        self.tool_motors = msg.tool
+        self.tool_motors = msg.tools
         self.message_received()
         return
 
@@ -115,9 +117,9 @@ class ThrustToSPINode(Node):
         response = ()
         self.last_message = message
         if (not self.blocked):
-            GPIO.output(24, GPIO.LOW)
+            GPIO.output(self.pin, GPIO.LOW)
             response = self.spi.xfer3(message)
-            GPIO.output(24, GPIO.HIGH)
+            GPIO.output(self.pin, GPIO.HIGH)
         return response
     
     # TODO: NEED TO TEST THIS PART
@@ -126,9 +128,9 @@ class ThrustToSPINode(Node):
         if (not self.blocked):
             time.sleep(0.0001)
             message = [0] * 17
-            GPIO.output(24, GPIO.LOW)
+            GPIO.output(self.pin, GPIO.LOW)
             response = self.spi.xfer3(bytearray(message))
-            GPIO.output(24, GPIO.HIGH)
+            GPIO.output(self.pin, GPIO.HIGH)
             print("2nd SLAVE: ", response)
         return 
 
@@ -163,6 +165,7 @@ def main(args=None):
 
     node.destroy_node()
     rclpy.shutdown()
+    GPIO.cleanup()
 
 if __name__ == "__main__":
     main()

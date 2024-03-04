@@ -18,7 +18,6 @@ install(PROGRAMS
   src/pi_temp.py
   src/depth_sense.py
   src/ms5837.py
-  src/PID_depth_control.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -9,9 +9,9 @@ THRUST_MIN = -2.92 #kg f
 class ThrustMapper:
     def __init__(self):
         self.com = np.array([0.0, 0.0, 0.0]) * SCALE
-        x_pos = 7.92 # values in inches
-        y_pos = 7.00 # values in inches
-        z_pos = 4.33 # values in inches
+        x_pos = 7.67717 # values in inches
+        y_pos = 6.37795 # values in inches
+        z_pos = 4.17323
         self.location_frame_absolute = np.matrix([[x_pos, y_pos, z_pos],  # Thruster 1
                                                   [-x_pos, y_pos, z_pos],  # Thruster 2
                                                   [-x_pos, -y_pos, z_pos],  # Thruster 3

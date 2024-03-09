@@ -9,6 +9,10 @@ import RPi.GPIO as GPIO
 
 from shared_msgs.msg import FinalThrustMsg
 
+
+def invert_thrust(thrust_value):
+    return 255 - thrust_value
+
 class ThrustToSPINode(Node):
     ZERO_THRUST = [127, 127, 127, 127, 127, 127, 127, 127]  # power of thrusters --> 127 is neutral
     FULL_THRUST_CONTROL = 2
@@ -28,21 +32,45 @@ class ThrustToSPINode(Node):
         self.thrusters = [127] * 8
 
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(24, GPIO.OUT, initial=GPIO.HIGH)
+        GPIO.setup(24, GPIO.OUT, initial=GPIO.HIGH) # CE0,CE1 is 7,8; PINS 24 and 26
 
         # Subscribe to final_thrust and start callback function
         self.sub = self.create_subscription(
-            FinalThrustMsg, # updated 50 times per second, called each time regardless of no change
+            FinalThrustMsg, # updated ~50 times per second, called each time regardless of no change
             'final_thrust',
             self.thrust_received,
             10
         )
         
         return
+    
+    def thrust_map(self, thrusters):
+        mapped_thrusters = [127] * 8
+
+        # mapped_thrusters[0] = thrusters[6]
+        # mapped_thrusters[1] = invert_thrust(thrusters[2])
+        # mapped_thrusters[2] = invert_thrust(thrusters[1])
+        # mapped_thrusters[3] = invert_thrust(thrusters[5])
+        # mapped_thrusters[4] = thrusters[7]
+        # mapped_thrusters[5] = thrusters[3]
+        # mapped_thrusters[6] = invert_thrust(thrusters[4])
+        # mapped_thrusters[7] = invert_thrust(thrusters[0])
+
+        mapped_thrusters[0] = thrusters[7]
+        mapped_thrusters[1] = invert_thrust(thrusters[3])
+        mapped_thrusters[2] = invert_thrust(thrusters[0])
+        mapped_thrusters[3] = invert_thrust(thrusters[4])
+        mapped_thrusters[4] = thrusters[6]
+        mapped_thrusters[5] = thrusters[2]
+        mapped_thrusters[6] = invert_thrust(thrusters[5])
+        mapped_thrusters[7] = invert_thrust(thrusters[1])
+
+
+        return(mapped_thrusters)
 
     def thrust_received(self, msg):
         print("THRUSTER RECEIVED")
-        self.thrusters = msg.thrusters
+        self.thrusters = self.thrust_map(msg.thrusters)
         self.message_received()
         return
 
@@ -75,6 +103,7 @@ class ThrustToSPINode(Node):
     def format_message(self):
         split_id = self.split_bytes(self.identifier)
         type_list = [self.type]
+        print(f"Thrusters after map: {self.thrusters}")
         message = list(type_list) + list(split_id) + list(self.thrusters)
         self.compute_crc(message)
         split_crc = self.split_bytes(self.crc)
@@ -133,6 +162,10 @@ class ThrustToSPINode(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = ThrustToSPINode()
+    GPIO.setup(23, GPIO.OUT, initial=GPIO.HIGH)
+    GPIO.output(23, GPIO.LOW)
+    time.sleep(2)
+    GPIO.output(23, GPIO.HIGH)
 
     try:
         rclpy.spin(node)
@@ -141,6 +174,7 @@ def main(args=None):
 
     node.destroy_node()
     rclpy.shutdown()
+    GPIO.cleanup()
 
 if __name__ == "__main__":
     main()

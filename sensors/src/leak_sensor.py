@@ -2,7 +2,7 @@
 import RPi.GPIO as GPIO
 
 # Change this to the actual pin that will be used for the leak sensor
-INPUT_PIN = 18
+INPUT_PIN = 12
 
 # Set this to true if you want to run the node without using ros
 ROSless = False

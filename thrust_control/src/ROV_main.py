@@ -12,7 +12,7 @@ class ROVMainNode(Node):
     # rotation_Scaling = 1.5
     mode_fine = 0
 
-    imu_angle_lock_enable = True  # TODO: setting this
+ #   imu_angle_lock_enable = True  # TODO: setting this
     imu_velocity = [0.0, 0.0, 0.0]  # Tuple of [roll vel., pitch vel., yaw vel.]
 
     def __init__(self):
@@ -42,8 +42,8 @@ class ROVMainNode(Node):
         thrust_command.desired_thrust = self.controller_percent_power
 
         # If set, override controller angular input with IMU PID loop values
-        if self.imu_angle_lock_enable:
-            thrust_command.desired_thrust[3:6] = self.imu_velocity
+  #      if self.imu_angle_lock_enable:
+   #         thrust_command.desired_thrust[3:6] = self.imu_velocity
 
         thrust_command.is_fine = self.mode_fine
         thrust_command.is_pool_centric = self.is_pool_centric

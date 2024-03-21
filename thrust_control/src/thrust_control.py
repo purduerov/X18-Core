@@ -21,6 +21,7 @@ class multiplier(Enum):
     fine = 0
     standard = 1
     yeet = 2
+    MEGAYEET = 3
     
 class reference_frame(Enum):
     body = 0
@@ -30,6 +31,10 @@ class reference_frame(Enum):
 fine_multiplier = [1.0, 1.0, 1.0, 0.2, 0.6, 0.4]
 std_multiplier = [1.5, 1.5, 1.5, 0.2, 1.0, 1.0]
 yeet_multiplier = [3, 3, 3, 0.4, 2.0, 2.0]
+mega_yeet_multiplier = [6, 6, 6, 0.8, 4.0, 4.0]
+ultra_mega_yeet_multiplier = [12, 12, 12, 1.6, 8.0, 8.0]
+
+
 
 class ThrustControlNode(Node):
     def __init__(self):
@@ -63,6 +68,8 @@ class ThrustControlNode(Node):
     def _pilot_command(self, data):
         self.desired_effort = data.desired_thrust
         self.power_mode =  data.is_fine
+        self.get_logger().info("power_mode: " + str(self.power_mode))
+
         if data.is_pool_centric:
             #self.frame = reference_frame.spatial
             pass
@@ -90,7 +97,7 @@ class ThrustControlNode(Node):
      #   self.get_logger().info("rotation matrix: " + str(self.orientation_matrix))
 
     def on_loop(self):
-        global fine_multiplier, std_multiplier, yeet_multiplier
+        global fine_multiplier, std_multiplier, yeet_multiplier, mega_yeet_multiplier
         
         if self.frame == reference_frame.spatial:
             translational_effort = np.array(self.desired_effort[0:3])
@@ -103,14 +110,24 @@ class ThrustControlNode(Node):
         #desired_effort is 6 value vector of trans xyz, rot xyz
         if np.linalg.norm(self.desired_effort) > 1:
             self.desired_effort /= np.linalg.norm(self.desired_effort)
-            
-        if self.power_mode == multiplier.fine: #convert from normalized %effort to 
+        #self.get_logger().info("pre-ramped desired_effort: " + str(self.desired_effort))
+
+        if self.power_mode == 0: #convert from normalized %effort to 
             self.desired_effort = self.desired_effort * fine_multiplier
-        elif self.power_mode == multiplier.standard:
+            self.get_logger().info("multiplier: " + str(fine_multiplier))
+
+        elif self.power_mode == 1:
             self.desired_effort = self.desired_effort * std_multiplier
-        else:
+            self.get_logger().info("multiplier: " + str(std_multiplier))
+
+        elif self.power_mode == 2:
             self.desired_effort = self.desired_effort * yeet_multiplier
-      #  self.get_logger().info("desired_effort: " + str(self.desired_effort))
+            self.get_logger().info("multiplier: " + str(yeet_multiplier))
+        else:
+            self.desired_effort = self.desired_effort * mega_yeet_multiplier
+            self.get_logger().info("multiplier: " + str(mega_yeet_multiplier))
+
+        #self.get_logger().info("desired_effort: " + str(self.desired_effort))
 
         # calculate thrust
         self.desired_thrusters_unramped = [self.tm.thrust_to_pwm(val) for val in self.tm.thruster_output(self.desired_effort)]

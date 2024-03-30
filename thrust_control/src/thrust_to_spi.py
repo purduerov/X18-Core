@@ -11,7 +11,7 @@ from shared_msgs.msg import FinalThrustMsg
 
 
 def invert_thrust(thrust_value):
-    return 255 - thrust_value
+    return 255 - thrust_value - 1
 
 class ThrustToSPINode(Node):
     ZERO_THRUST = [127, 127, 127, 127, 127, 127, 127, 127]  # power of thrusters --> 127 is neutral
@@ -56,14 +56,14 @@ class ThrustToSPINode(Node):
         # mapped_thrusters[6] = invert_thrust(thrusters[4])
         # mapped_thrusters[7] = invert_thrust(thrusters[0])
 
-        mapped_thrusters[0] = thrusters[7]
-        mapped_thrusters[1] = invert_thrust(thrusters[3])
-        mapped_thrusters[2] = invert_thrust(thrusters[0])
-        mapped_thrusters[3] = invert_thrust(thrusters[4])
-        mapped_thrusters[4] = thrusters[6]
-        mapped_thrusters[5] = thrusters[2]
-        mapped_thrusters[6] = invert_thrust(thrusters[5])
-        mapped_thrusters[7] = invert_thrust(thrusters[1])
+        mapped_thrusters[0] = invert_thrust(thrusters[6])
+        mapped_thrusters[1] = invert_thrust(thrusters[2])
+        mapped_thrusters[2] = thrusters[5]
+        mapped_thrusters[3] = thrusters[1]
+        mapped_thrusters[4] = invert_thrust(thrusters[7])
+        mapped_thrusters[5] = invert_thrust(thrusters[3])
+        mapped_thrusters[6] = (thrusters[0])
+        mapped_thrusters[7] = (thrusters[4])
 
 
         return(mapped_thrusters)

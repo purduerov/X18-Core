@@ -32,7 +32,6 @@ fine_multiplier = [1.0, 1.0, 1.0, 0.2, 0.6, 0.4]
 std_multiplier = [1.5, 1.5, 1.5, 0.2, 1.0, 1.0]
 yeet_multiplier = [3, 3, 3, 0.4, 2.0, 2.0]
 mega_yeet_multiplier = [6, 6, 6, 0.8, 4.0, 4.0]
-ultra_mega_yeet_multiplier = [12, 12, 12, 1.6, 8.0, 8.0]
 
 
 

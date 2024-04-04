@@ -18,7 +18,6 @@ install(PROGRAMS
   src/pi_temp.py
   src/depth_sense.py
   src/ms5837.py
-  src/PID_depth_control.py
   src/leak_sensor.py
   src/water_temp.py
   DESTINATION lib/${PROJECT_NAME}

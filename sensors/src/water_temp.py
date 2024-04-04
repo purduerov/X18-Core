@@ -27,9 +27,9 @@ class WaterTemp(Node):
     def timer_callback(self):
         msg = Float32()
         # Default units are Celsius
-        temp = self.sensor.read()
+        updated = self.sensor.read()
         # Uncomment for Fahrenheit
-        # temp = self.sensor.temperature(tsys01.UNITS_Farenheit)
+        temp = self.sensor.temperature() # Get temperature in default units (Centigrade)
         msg.data = temp
         self.publisher_.publish(msg)
 

@@ -22,7 +22,7 @@ install(PROGRAMS
   src/thrust_to_spi.py
   src/MY_SPI_TOOLS.py
   src/MY_SPI.py
-  src/test_thrust_spy.py
+  src/test_thrust_spi.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

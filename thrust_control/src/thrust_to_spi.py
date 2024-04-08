@@ -32,7 +32,7 @@ class ThrustToSPINode(Node):
         self.thrusters = [127] * 8
 
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(24, GPIO.OUT, initial=GPIO.HIGH) # CE0,CE1 is 7,8; PINS 24 and 26
+       # GPIO.setup(24, GPIO.OUT, initial=GPIO.HIGH) # CE0,CE1 is 7,8; PINS 24 and 26
 
         # Subscribe to final_thrust and start callback function
         self.sub = self.create_subscription(
@@ -129,19 +129,19 @@ class ThrustToSPINode(Node):
         response = ()
         self.last_message = message
         if (not self.blocked):
-            GPIO.output(24, GPIO.LOW)
+            #GPIO.output(24, GPIO.LOW)
             response = self.spi.xfer3(message)
-            GPIO.output(24, GPIO.HIGH)
+            #GPIO.output(24, GPIO.HIGH)
         return response
     
     def response_handler(self, response):
-        print("1st SLAVE: ", response)
+        #print("1st SLAVE: ", response)
         if (not self.blocked):
             time.sleep(0.0001)
             message = [0] * 13
-            GPIO.output(24, GPIO.LOW)
+            #GPIO.output(24, GPIO.LOW)
             response = self.spi.xfer3(bytearray(message))
-            GPIO.output(24, GPIO.HIGH)
+            #GPIO.output(24, GPIO.HIGH)
             print("2nd SLAVE: ", response)
         return 
 
@@ -155,7 +155,7 @@ class ThrustToSPINode(Node):
         print("MASTER: ", list(message))
         self.spi.xfer3(message)
         self.spi.close()
-        GPIO.cleanup()
+        #GPIO.cleanup()
         print('Closed')
         exit(1)
 

@@ -3,7 +3,7 @@ import rclpy
 from rclpy.node import Node
 
 
-from shared_msgs.msg import FinalThrustMsg, ThrustStatusMsg, ThrustCommandMsg, ComMsg, ImuMsg, ToolsCommandMsg
+from shared_msgs.msg import FinalThrustMsg, ThrustStatusMsg, ThrustCommandMsg, ComMsg, ImuMsg#, ToolsCommandMsg
 from thrust_mapping import ThrustMapper
 import numpy as np
 from enum import Enum
@@ -44,7 +44,7 @@ class ThrustControlNode(Node):
         self.thrust_pub = self.create_publisher(FinalThrustMsg, 'final_thrust', 10)
         self.status_pub = self.create_publisher(ThrustStatusMsg, 'thrust_status', 10)
 
-        self.tools_pub = self.create_publisher(ToolsCommandMsg, 'tools_control', 10) # TODO: ADD THIS PART
+        #self.tools_pub = self.create_publisher(ToolsCommandMsg, 'tools_control', 10) # TODO: ADD THIS PART
 
         # initialize subscribers
         self.command_sub = self.create_subscription(ThrustCommandMsg, '/thrust_command', self._pilot_command, 10)
@@ -67,7 +67,7 @@ class ThrustControlNode(Node):
     def _pilot_command(self, data):
         self.desired_effort = data.desired_thrust
         self.power_mode =  data.is_fine
-        self.get_logger().info("power_mode: " + str(self.power_mode))
+        #self.get_logger().info("power_mode: " + str(self.power_mode))
 
         if data.is_pool_centric:
             #self.frame = reference_frame.spatial
@@ -113,18 +113,18 @@ class ThrustControlNode(Node):
 
         if self.power_mode == 0: #convert from normalized %effort to 
             self.desired_effort = self.desired_effort * fine_multiplier
-            self.get_logger().info("multiplier: " + str(fine_multiplier))
+        #    self.get_logger().info("multiplier: " + str(fine_multiplier))
 
         elif self.power_mode == 1:
             self.desired_effort = self.desired_effort * std_multiplier
-            self.get_logger().info("multiplier: " + str(std_multiplier))
+         #   self.get_logger().info("multiplier: " + str(std_multiplier))
 
         elif self.power_mode == 2:
             self.desired_effort = self.desired_effort * yeet_multiplier
-            self.get_logger().info("multiplier: " + str(yeet_multiplier))
+          #  self.get_logger().info("multiplier: " + str(yeet_multiplier))
         else:
             self.desired_effort = self.desired_effort * mega_yeet_multiplier
-            self.get_logger().info("multiplier: " + str(mega_yeet_multiplier))
+           # self.get_logger().info("multiplier: " + str(mega_yeet_multiplier))
 
         #self.get_logger().info("desired_effort: " + str(self.desired_effort))
 
@@ -152,15 +152,15 @@ class ThrustControlNode(Node):
         tsm = ThrustStatusMsg()
         tsm.status = pwm_values
 
-        tlm = ToolsCommandMsg() # TODO: ADDED THIS PART
-        tools = [127, 127, 127, 127]
-        tlm.tools = tools
+        #tlm = ToolsCommandMsg() # TODO: ADDED THIS PART
+        #tools = [127, 127, 127, 127]
+        #tlm.tools = tools
 
         # publish data
         self.thrust_pub.publish(tcm)
         self.status_pub.publish(tsm)
 
-        self.tools_pub.publish(tlm)
+        #self.tools_pub.publish(tlm)
 
     def ramp(self, unramped_thrusters):
         for index in range(0,8):

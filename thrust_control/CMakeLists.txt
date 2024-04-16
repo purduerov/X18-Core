@@ -17,12 +17,10 @@ ament_python_install_package(${PROJECT_NAME})
 
 install(PROGRAMS
   src/ROV_main.py
+  src/test_thrust_spi.py
   src/thrust_control.py
   src/thrust_mapping.py
   src/thrust_to_spi.py
-  src/MY_SPI_TOOLS.py
-  src/MY_SPI.py
-  src/test_thrust_spi.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

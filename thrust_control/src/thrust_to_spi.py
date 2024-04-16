@@ -38,7 +38,7 @@ class ThrustToSPINode(Node):
         # initialize pull-down for chip select
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self.pin, GPIO.OUT, initial=GPIO.HIGH)
+        # GPIO.setup(self.pin, GPIO.OUT, initial=GPIO.HIGH)
 
         # Subscribe to final_thrust and start callback function
         self.sub = self.create_subscription(
@@ -98,45 +98,52 @@ class ThrustToSPINode(Node):
         bytes_list = [bytes_list[1], bytes_list[0]]
         return bytes_list
 
+    # prepares each byte to be sent into list of bytes and gets CRC value
     def format_message(self):
         split_id = self.split_bytes(self.identifier)
-        message = list(self.type) + list(split_id) + list(self.thrusters)
+        message = [self.type] + list(split_id) + list(self.thrusters)
         self.compute_crc(message)
         split_crc = self.split_bytes(self.crc)
         split_crc = self.swap_bytes(split_crc)
         message += split_crc
+        self.prev_message = message
         formatted = bytearray(message)
         return formatted
 
-    '''
-    message: 11 32-bit values
-    input data format: words
-    POLY = 0x4C11DB7
-    '''
+    # prepares input and calls the Crc32Mpeg2 CRC function
     def compute_crc(self, message):
         message_list = []
         for item in message:
             message_list.extend([0x00, 0x00, 0x00, item])
         self.crc = Crc32Mpeg2.calc(message_list)
         return
+    '''
+    message: 11 32-bit values
+    input data format: words
+    POLY = 0x4C11DB7
+    '''
     
+    # sends the message and ~[pulls Chip Select pin low]
     def transfer(self, message):
         print("MASTER: ", list(message))
         response = ()
         self.last_message = message
         if (not self.blocked):
-            GPIO.output(self.pin, GPIO.LOW)
+            # GPIO.output(self.pin, GPIO.LOW)
             response = list(self.spi.xfer3(bytearray(message)))
-            GPIO.output(self.pin, GPIO.HIGH)
+            # GPIO.output(self.pin, GPIO.HIGH)
         return response
     
+    # sends data to allow slace response
     def response_handler(self, response):
         if (not self.blocked):
             time.sleep(0.0001)
             message = [0] * 13
-            GPIO.output(self.pin, GPIO.LOW)
+            # GPIO.output(self.pin, GPIO.LOW)
             response = list(self.spi.xfer3(bytearray(message)))
-            GPIO.output(self.pin, GPIO.HIGH)
+            if (response[11] != self.prev_message[11] or response[12] != self.prev_message[12]):
+                print("ERROR: CRC VALUES DO NOT MATCH")
+            # GPIO.output(self.pin, GPIO.HIGH)
             print("SLAVE: ", response)
         return 
 
@@ -149,9 +156,9 @@ class ThrustToSPINode(Node):
         self.thrusters = self.ZERO_THRUST
         message = self.format_message()
         print("MASTER: ", list(message))
-        GPIO.output(self.pin, GPIO.LOW)
+        # GPIO.output(self.pin, GPIO.LOW)
         self.spi.xfer3(message)
-        GPIO.output(self.pin, GPIO.HIGH)
+        # GPIO.output(self.pin, GPIO.HIGH)
         self.spi.close()
         GPIO.cleanup()
         print('Closed')

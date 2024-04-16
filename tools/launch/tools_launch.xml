@@ -1,4 +1,4 @@
 <launch>
   <node pkg="tools" exec="tools_to_gpio.py" namespace="rov"/>
- <!--  <node pkg="tools" exec="MY_SPI_TOOLS.py" namespace="rov"/> -->
+  <node pkg="tools" exec="tools_to_spi.py" namespace="rov"/>
 </launch>

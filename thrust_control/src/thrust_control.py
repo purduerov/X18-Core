@@ -8,7 +8,7 @@ from thrust_mapping import ThrustMapper
 import numpy as np
 from enum import Enum
 
-MAX_CHANGE = .15
+MAX_CHANGE = .30
 
 # x trans ability is capped at 18.33 kgf-m physically
 # y trans ability is capped at 10.59 kgf-m physically
@@ -31,7 +31,7 @@ class reference_frame(Enum):
 fine_multiplier = [1.0, 1.0, 1.0, 0.2, 0.6, 0.4]
 std_multiplier = [1.5, 1.5, 1.5, 0.2, 1.0, 1.0]
 yeet_multiplier = [3, 3, 3, 0.4, 2.0, 2.0]
-mega_yeet_multiplier = [6, 6, 6, 0.8, 4.0, 4.0]
+mega_yeet_multiplier = [6, 6, 6, 0.4, 2.0, 2.0]
 
 
 

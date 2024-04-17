@@ -8,7 +8,7 @@ THRUST_MIN = -2.92 #kg f
 
 class ThrustMapper:
     def __init__(self):
-        self.invert_array = [-1, -1, 1, 1, -1, -1, 1, 1] #-1 inverts direction, 1 keeps the same direction
+        self.invert_array = [1, 1, -1, -1, 1, 1, -1, -1] #-1 inverts direction, 1 keeps the same direction
         self.com = np.array([0.0, 0.0, 0.0]) * SCALE
         x_pos = 7.67717 # values in inches
         y_pos = 6.37795 # values in inches

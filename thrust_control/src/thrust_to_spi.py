@@ -7,15 +7,25 @@ from crccheck.crc import Crc32Mpeg2
 
 import RPi.GPIO as GPIO
 
-from shared_msgs.msg import FinalThrustMsg
+from shared_msgs.msg import FinalThrustMsg, ToolsMotorMsg
 
 def invert_thrust(thrust_value):
     return (255 - thrust_value - 1)
 
+def swap_bytes(num):
+    byte2 = num & 0xFF
+    byte1 = (num >> 8) & 0xFF
+    return [byte1, byte2]
+    
+def split_bytes(bytes_list):
+    return [bytes_list[1], bytes_list[0]]
+
 class ThrustToSPINode(Node):
     # initialize Class Variables
     ZERO_THRUST = [127, 127, 127, 127, 127, 127, 127, 127]  # 127 is neutral
+    ZERO_TOOLS = [100, 100, 100, 100] # WHAT IS THE NEUTRAL VALUE???
     FULL_THRUST_CONTROL = 2
+    TOOLS_SERVO_CONTROL = 3
     identifier = 0
     blocked = False
 
@@ -41,10 +51,17 @@ class ThrustToSPINode(Node):
         # GPIO.setup(self.pin, GPIO.OUT, initial=GPIO.HIGH)
 
         # Subscribe to final_thrust and start callback function
-        self.sub = self.create_subscription(
+        self.thrust_sub = self.create_subscription(
             FinalThrustMsg, # message, updated 50 times per second regardless of change
             'final_thrust', # topic
             self.thrust_received, # callback function
+            10
+        )
+
+        self.tools_sub = self.create_subscription(
+            ToolsMotorMsg,
+            'tools_motor',
+            self.tools_received,
             10
         )
         
@@ -66,17 +83,24 @@ class ThrustToSPINode(Node):
     # thrust callback function
     def thrust_received(self, msg):
         print("THRUSTER RECEIVED")
-        self.thrusters = self.thrust_map(msg.thrusters)
+        self.data = self.thrust_map(msg.thrusters)
+        self.type = self.FULL_THRUST_CONTROL
+        self.message_received()
+        return
+
+    def tools_received(self, msg):
+        print("TOOLS RECEVIED")
+        self.data = msg.tools
+        self.type = self.TOOLS_SERVO_CONTROL
         self.message_received()
         return
 
     # process a received message from subscription
     def message_received(self):
         if (not self.blocked):
-            self.type = self.FULL_THRUST_CONTROL
             self.set_message_id()
-            response = self.transfer(self.format_message())
-            self.response_handler(response)
+            self.transfer(self.format_message())
+            self.response_handler()
         return
 
     # sets id to an incremented 2-byte number
@@ -86,29 +110,15 @@ class ThrustToSPINode(Node):
         else:
             self.identifier += 1
         return
-    
-    # only first bytes of num are returned
-    def split_bytes(self, num):
-        byte2 = num & 0xFF
-        byte1 = (num >> 8) & 0xFF
-        return [byte1, byte2]
-   
-    # swap bytes in a 2-byte list
-    def swap_bytes(self, bytes_list):
-        bytes_list = [bytes_list[1], bytes_list[0]]
-        return bytes_list
 
     # prepares each byte to be sent into list of bytes and gets CRC value
     def format_message(self):
-        split_id = self.split_bytes(self.identifier)
-        message = [self.type] + list(split_id) + list(self.thrusters)
+        split_id = split_bytes(self.identifier)
+        message = [self.type] + list(split_id) + list(self.data)
         self.compute_crc(message)
-        split_crc = self.split_bytes(self.crc)
-        split_crc = self.swap_bytes(split_crc)
+        split_crc = swap_bytes(split_bytes(self.crc))
         message += split_crc
-        self.prev_message = message
-        formatted = bytearray(message)
-        return formatted
+        return bytearray(message)
 
     # prepares input and calls the Crc32Mpeg2 CRC function
     def compute_crc(self, message):
@@ -126,39 +136,47 @@ class ThrustToSPINode(Node):
     # sends the message and ~[pulls Chip Select pin low]
     def transfer(self, message):
         print("MASTER: ", list(message))
-        response = ()
-        self.last_message = message
         if (not self.blocked):
+            self.last_message = list(message)
             # GPIO.output(self.pin, GPIO.LOW)
-            response = list(self.spi.xfer3(bytearray(message)))
+            self.spi.xfer3(message)
             # GPIO.output(self.pin, GPIO.HIGH)
-        return response
+        return
     
     # sends data to allow slace response
-    def response_handler(self, response):
+    def response_handler(self):
         if (not self.blocked):
             time.sleep(0.0001)
-            message = [0] * 13
+            message = [0] * len(self.last_message)
             # GPIO.output(self.pin, GPIO.LOW)
-            response = list(self.spi.xfer3(bytearray(message)))
-            if (response[11] != self.prev_message[11] or response[12] != self.prev_message[12]):
+            response = list(self.spi.xfer3(message))
+            if (response[-2] != self.last_message[-2] or response[-1] != self.last_message[-1]):
                 print("ERROR: CRC VALUES DO NOT MATCH")
             # GPIO.output(self.pin, GPIO.HIGH)
             print("SLAVE: ", response)
         return 
 
-    # error and interrupt handler 
+    # error and interrupt handler NEED TO UPDATE
     def handler(self):
         print('trl-C detected')
         self.blocked = True
-        self.type = self.FULL_THRUST_CONTROL
-        self.identifier = 0
-        self.thrusters = self.ZERO_THRUST
-        message = self.format_message()
-        print("MASTER: ", list(message))
-        # GPIO.output(self.pin, GPIO.LOW)
-        self.spi.xfer3(message)
-        # GPIO.output(self.pin, GPIO.HIGH)
+
+        message = [self.FULL_THRUST_CONTROL] + [0,0] + self.ZERO_THRUST
+        self.compute_crc(message)
+        split_crc = swap_bytes(split_bytes(self.crc))
+        message += split_crc
+        self.spi.xfer3(bytearray(message))
+
+        print("THRUST MASTER: ", list(message))
+
+        message = [self.TOOLS_SERVO_CONTROL] + [0,0] + self.ZERO_TOOLS
+        self.compute_crc(message)
+        split_crc = swap_bytes(split_bytes(self.crc))
+        message += split_crc
+        self.spi.xfer3(bytearray(message))
+
+        print("TOOLS MASTER: ", list(message))
+
         self.spi.close()
         GPIO.cleanup()
         print('Closed')

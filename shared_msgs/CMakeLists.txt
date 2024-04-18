@@ -29,6 +29,7 @@ set(msg_files
   "msg/ThrustStatusMsg.msg"
   "msg/ToolsCommandMsg.msg"
   "msg/SPITestMsg.msg"
+  "msg/ToolsMotorMsg.msg"
  )
 
  

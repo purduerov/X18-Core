@@ -12,12 +12,12 @@ from shared_msgs.msg import FinalThrustMsg, ToolsMotorMsg
 def invert_thrust(thrust_value):
     return (255 - thrust_value - 1)
 
-def swap_bytes(num):
+def split_bytes(num):
     byte2 = num & 0xFF
     byte1 = (num >> 8) & 0xFF
     return [byte1, byte2]
     
-def split_bytes(bytes_list):
+def swap_bytes(bytes_list):
     return [bytes_list[1], bytes_list[0]]
 
 class ThrustToSPINode(Node):
@@ -161,15 +161,17 @@ class ThrustToSPINode(Node):
         print('trl-C detected')
         self.blocked = True
 
-        message = [self.FULL_THRUST_CONTROL] + [0,0] + self.ZERO_THRUST
-        self.compute_crc(message)
+        kill = [self.FULL_THRUST_CONTROL] + [0,0] + self.ZERO_THRUST
+        print(kill)
+        self.compute_crc(kill)
         split_crc = swap_bytes(split_bytes(self.crc))
-        message += split_crc
-        self.spi.xfer3(bytearray(message))
+        kill += split_crc
+        self.spi.xfer3(bytearray(kill))
 
-        print("THRUST MASTER: ", list(message))
+        print("THRUST MASTER: ", list(kill))
 
         message = [self.TOOLS_SERVO_CONTROL] + [0,0] + self.ZERO_TOOLS
+        print(message)
         self.compute_crc(message)
         split_crc = swap_bytes(split_bytes(self.crc))
         message += split_crc

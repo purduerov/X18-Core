@@ -7,7 +7,7 @@ import RPi.GPIO as GPIO
 import signal
 import sys
 
-gpio_pins = [16, 21, 23, 24, 20]
+gpio_pins = [16, 23, 24, 25]
 
 
 class Tools(Node):
@@ -24,16 +24,15 @@ class Tools(Node):
     def message_received(self, msg):
         toolsarr = msg.tools
         uv_pin = gpio_pins[0]
-        pm_pin = gpio_pins[3]
+        pm_pin = gpio_pins[2]
         ghost_pin = gpio_pins[1]
-        secondary_pin = gpio_pins[2]
-        fishfry_pin = gpio_pins[4]
+        secondary_pin = gpio_pins[3]
 
         if (toolsarr[0]):
-            GPIO.output(uv_pin, GPIO.HIGH)
+            GPIO.output(pm_pin, GPIO.HIGH)
             print("1 high")
         else:
-            GPIO.output(uv_pin, GPIO.LOW)
+            GPIO.output(pm_pin, GPIO.LOW)
             print("1 low")
 
         if toolsarr[1]:
@@ -51,22 +50,15 @@ class Tools(Node):
             print("3 low")
 
         if toolsarr[3]:
-            GPIO.output(pm_pin, True)
+            GPIO.output(uv_pin, True)
             print("4 high")
         else:
-            GPIO.output(pm_pin, GPIO.LOW)
+            GPIO.output(uv_pin, GPIO.LOW)
             print("4 low")
-
-        if toolsarr[4]:
-            GPIO.output(fishfry_pin, True)
-            print("5 high")
-        else:
-            GPIO.output(fishfry_pin, GPIO.LOW)
-            print("5 low")
 
 
 def handle_exit(signum, frame):
-    ("ctr-C detected")
+    print("ctr-C detected")
     GPIO.cleanup()
     sys.exit(0)
 

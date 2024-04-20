@@ -162,10 +162,10 @@ class ThrustToSPINode(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = ThrustToSPINode()
-    GPIO.setup(23, GPIO.OUT, initial=GPIO.HIGH)
-    GPIO.output(23, GPIO.LOW)
+    GPIO.setup(22, GPIO.OUT, initial=GPIO.HIGH)
+    GPIO.output(22, GPIO.LOW)
     time.sleep(2)
-    GPIO.output(23, GPIO.HIGH)
+    GPIO.output(22, GPIO.HIGH)
 
     try:
         rclpy.spin(node)

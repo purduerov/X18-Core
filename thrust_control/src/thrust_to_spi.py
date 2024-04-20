@@ -7,7 +7,7 @@ from crccheck.crc import Crc32Mpeg2
 
 import RPi.GPIO as GPIO
 
-from shared_msgs.msg import FinalThrustMsg, ToolsMotorMsg
+from shared_msgs.msg import FinalThrustMsg, ToolsCommandMsg
 
 def invert_thrust(thrust_value):
     return (255 - thrust_value - 1)
@@ -23,7 +23,7 @@ def swap_bytes(bytes_list):
 class ThrustToSPINode(Node):
     # initialize Class Variables
     ZERO_THRUST = [127, 127, 127, 127, 127, 127, 127, 127]  # 127 is neutral
-    ZERO_TOOLS = [100, 100, 100, 100] # WHAT IS THE NEUTRAL VALUE???
+    ZERO_TOOLS = [127,127,127,127] # WHAT IS THE NEUTRAL VALUE???
     FULL_THRUST_CONTROL = 2
     TOOLS_SERVO_CONTROL = 3
     identifier = 0
@@ -43,6 +43,7 @@ class ThrustToSPINode(Node):
         
         # initialize values
         self.thrusters = self.ZERO_THRUST
+        self.tools = self.ZERO_TOOLS
         self.pin = 8
 
         # initialize pull-down for chip select

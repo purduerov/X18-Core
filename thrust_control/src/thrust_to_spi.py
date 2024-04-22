@@ -60,7 +60,7 @@ class ThrustToSPINode(Node):
         )
 
         self.tools_sub = self.create_subscription(
-            ToolsMotorMsg,
+            ToolsCommandMsg,
             'tools_motor',
             self.tools_received,
             10
@@ -191,10 +191,10 @@ def main(args=None):
     node = ThrustToSPINode()
 
     # activate reset pin
-    GPIO.setup(23, GPIO.OUT, initial=GPIO.HIGH)
-    GPIO.output(23, GPIO.LOW)
+    GPIO.setup(22, GPIO.OUT, initial=GPIO.HIGH)
+    GPIO.output(22, GPIO.LOW)
     time.sleep(2)
-    GPIO.output(23, GPIO.HIGH)
+    GPIO.output(22, GPIO.HIGH)
 
     # run node
     try:

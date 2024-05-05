@@ -28,7 +28,10 @@ set(msg_files
   "msg/ThrustCommandMsg.msg"
   "msg/ThrustStatusMsg.msg"
   "msg/ToolsCommandMsg.msg"
-)
+  "msg/SPITestMsg.msg"
+  "msg/ToolsMotorMsg.msg"
+ )
+
  
 rosidl_generate_interfaces(${PROJECT_NAME}
   ${msg_files}

@@ -7,7 +7,7 @@ from crccheck.crc import Crc32Mpeg2
 
 import RPi.GPIO as GPIO
 
-from shared_msgs.msg import FinalThrustMsg, ToolsCommandMsg
+from shared_msgs.msg import FinalThrustMsg, ToolsMotorMsg
 
 def invert_thrust(thrust_value):
     return (255 - thrust_value - 1)
@@ -60,8 +60,8 @@ class ThrustToSPINode(Node):
         )
 
         self.tools_sub = self.create_subscription(
-            ToolsCommandMsg,
-            'tools_motor',
+            ToolsMotorMsg,
+            '/tools_motor',
             self.tools_received,
             10
         )
@@ -91,7 +91,8 @@ class ThrustToSPINode(Node):
 
     def tools_received(self, msg):
         print("TOOLS RECEVIED")
-        self.data = msg.tools
+        self.data = list(msg.tools)
+        self.data += [0, 0, 0, 0]
         self.type = self.TOOLS_SERVO_CONTROL
         self.message_received()
         return

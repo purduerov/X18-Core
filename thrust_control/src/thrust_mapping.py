@@ -8,10 +8,11 @@ THRUST_MIN = -2.92 #kg f
 
 class ThrustMapper:
     def __init__(self):
+        self.invert_array = [1, 1, -1, -1, 1, 1, -1, -1] #-1 inverts direction, 1 keeps the same direction
         self.com = np.array([0.0, 0.0, 0.0]) * SCALE
         x_pos = 7.67717 # values in inches
         y_pos = 6.37795 # values in inches
-        z_pos = 4.17323
+        z_pos = 4.17323 # values in inches
         self.location_frame_absolute = np.matrix([[x_pos, y_pos, z_pos],  # Thruster 1
                                                   [-x_pos, y_pos, z_pos],  # Thruster 2
                                                   [-x_pos, -y_pos, z_pos],  # Thruster 3
@@ -26,14 +27,19 @@ class ThrustMapper:
         y_comp = np.sin(alpha) * np.cos(beta)
         z_comp = np.sin(beta)
 
-        self.direction = np.matrix([[x_comp, -y_comp, -z_comp],  # Thruster 1
+        self.direction =            [[x_comp, -y_comp, -z_comp],  # Thruster 1
                                     [-x_comp, -y_comp, -z_comp],  # Thruster 2
                                     [-x_comp, y_comp, -z_comp],  # Thruster 3
                                     [x_comp, y_comp, -z_comp],  # Thruster 4
                                     [x_comp, -y_comp, z_comp],  # Thruster 5
                                     [-x_comp, -y_comp, z_comp],  # Thruster 6
                                     [-x_comp, y_comp, z_comp],  # Thruster 7
-                                    [x_comp, y_comp, z_comp]])  # Thruster 8
+                                    [x_comp, y_comp, z_comp]]  # Thruster 8
+        print(np.matrix(self.direction))
+        self.direction = np.matrix([[x * self.invert_array[i] for x in inner]for i, inner in enumerate(self.direction)])
+        print()
+
+        print(self.direction)
 
         self.location = self.change_origin(0, 0, 0)
         self.torque = self.torque_values()

@@ -2,5 +2,4 @@
   <node pkg="thrust_control" exec="ROV_main.py" namespace="rov"/>
   <node pkg="thrust_control" exec="thrust_control.py" namespace="rov"/>
   <node pkg="thrust_control" exec="thrust_to_spi.py" namespace="rov"/>
-  <node pkg="thrust_control" exec="test_thrust_spi.py" namespace="rov"/>
 </launch>

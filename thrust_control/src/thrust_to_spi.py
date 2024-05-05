@@ -10,6 +10,7 @@ import RPi.GPIO as GPIO
 from shared_msgs.msg import FinalThrustMsg, ToolsMotorMsg
 
 def invert_thrust(thrust_value):
+
     return (255 - thrust_value - 1)
 
 def split_bytes(num):
@@ -19,6 +20,7 @@ def split_bytes(num):
     
 def swap_bytes(bytes_list):
     return [bytes_list[1], bytes_list[0]]
+
 
 class ThrustToSPINode(Node):
     # initialize Class Variables
@@ -49,7 +51,9 @@ class ThrustToSPINode(Node):
         # initialize pull-down for chip select
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
-        # GPIO.setup(self.pin, GPIO.OUT, initial=GPIO.HIGH)
+
+       # GPIO.setup(24, GPIO.OUT, initial=GPIO.HIGH) # CE0,CE1 is 7,8; PINS 24 and 26
+
 
         # Subscribe to final_thrust and start callback function
         self.thrust_sub = self.create_subscription(
@@ -67,6 +71,29 @@ class ThrustToSPINode(Node):
         )
         
         return
+    
+    def thrust_map(self, thrusters):
+        mapped_thrusters = [127] * 8
+
+        #mapped_thrusters[0] = invert_thrust(thrusters[6])
+        #mapped_thrusters[1] = invert_thrust(thrusters[2])
+        #mapped_thrusters[2] = thrusters[5]
+        #mapped_thrusters[3] = thrusters[1]
+        #mapped_thrusters[4] = invert_thrust(thrusters[7])
+        #mapped_thrusters[5] = invert_thrust(thrusters[3])
+        #mapped_thrusters[6] = (thrusters[0])
+        #mapped_thrusters[7] = (thrusters[4])
+
+        mapped_thrusters[0] = (thrusters[6])
+        mapped_thrusters[1] = (thrusters[2])
+        mapped_thrusters[2] = thrusters[5]
+        mapped_thrusters[3] = thrusters[1]
+        mapped_thrusters[4] = (thrusters[7])
+        mapped_thrusters[5] = (thrusters[3])
+        mapped_thrusters[6] = (thrusters[0])
+        mapped_thrusters[7] = (thrusters[4])
+
+        return(mapped_thrusters)
 
     # map thrusters to correct position and invert 
     def thrust_map(self, thrusters):
@@ -156,6 +183,7 @@ class ThrustToSPINode(Node):
                 print("ERROR: CRC VALUES DO NOT MATCH")
             # GPIO.output(self.pin, GPIO.HIGH)
             print("SLAVE: ", response)
+
         return 
 
     # error and interrupt handler NEED TO UPDATE
@@ -182,7 +210,7 @@ class ThrustToSPINode(Node):
         print("TOOLS MASTER: ", list(message))
 
         self.spi.close()
-        GPIO.cleanup()
+        #GPIO.cleanup()
         print('Closed')
         exit(1)
 
@@ -191,7 +219,6 @@ def main(args=None):
     rclpy.init(args=args)
     node = ThrustToSPINode()
 
-    # activate reset pin
     GPIO.setup(22, GPIO.OUT, initial=GPIO.HIGH)
     GPIO.output(22, GPIO.LOW)
     time.sleep(2)

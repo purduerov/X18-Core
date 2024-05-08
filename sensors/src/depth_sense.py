@@ -12,12 +12,13 @@ class DepthSense(Node):
         self.publisher_ = self.create_publisher(Float64, "depth", 10)
         timer_period = (1.0 / 20.0)  # 20 Hz
         self.timer = self.create_timer(timer_period, self.timer_callback)
-
-        self.sensor = ms5837.MS5837(1)  # Initialize sensor on i2c bus 1
-        init_success = self.sensor.init()  # Initializes with density of freshwater
-
-        if init_success == 0:
-            print("Depth could not be initialized... Exiting")
+        try: 
+            self.sensor = ms5837.MS5837(1)  # Initialize sensor on i2c bus 1
+            self.sensor.init()  # Initializes with density of freshwater
+            self.get_logger().info("Depth sensor connected")
+        except:
+            self.get_logger().info("Depth sensor not found")
+            self.sensor = None
             exit(1)
 
     def timer_callback(self):
@@ -27,6 +28,7 @@ class DepthSense(Node):
 
         # publishes depth in meters at a rate of 20Hz
         self.publisher_.publish(msg)
+        print(f'Depth: {round(msg.data, 3)} km')
 
 
 def main(args=None):

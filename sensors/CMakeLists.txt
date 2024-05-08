@@ -13,11 +13,10 @@ find_package(rclpy REQUIRED)
 ament_python_install_package(${PROJECT_NAME})
 
 install(PROGRAMS
-  src/imu_sensor.py
-  src/BNO055.py
   src/pi_temp.py
   src/depth_sense.py
   src/ms5837.py
+ # src/PID_depth_control.py
   src/leak_sensor.py
   src/water_temp.py
   DESTINATION lib/${PROJECT_NAME}

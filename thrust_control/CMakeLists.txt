@@ -22,8 +22,8 @@ install(PROGRAMS
   src/thrust_mapping.py
   src/thrust_to_spi.py
   #src/thrust_to_spi_2.py
-  src/MY_SPI_TOOLS.py
-  src/MY_SPI.py
+  #  src/MY_SPI_TOOLS.py
+  # src/MY_SPI.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

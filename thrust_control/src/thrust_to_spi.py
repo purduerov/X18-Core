@@ -96,17 +96,17 @@ class ThrustToSPINode(Node):
         return(mapped_thrusters)
 
     # map thrusters to correct position and invert 
-    def thrust_map(self, thrusters):
-        mapped_thrusters = self.ZERO_THRUST
-        mapped_thrusters[0] = invert_thrust(thrusters[6])
-        mapped_thrusters[1] = invert_thrust(thrusters[2])
-        mapped_thrusters[2] = thrusters[5]
-        mapped_thrusters[3] = thrusters[1]
-        mapped_thrusters[4] = invert_thrust(thrusters[7])
-        mapped_thrusters[5] = invert_thrust(thrusters[3])
-        mapped_thrusters[6] = thrusters[0]
-        mapped_thrusters[7] = thrusters[4]
-        return mapped_thrusters
+   # def thrust_map(self, thrusters):
+     #   mapped_thrusters = self.ZERO_THRUST
+      #  mapped_thrusters[0] = invert_thrust(thrusters[6])
+       # mapped_thrusters[1] = invert_thrust(thrusters[2])
+       # mapped_thrusters[2] = thrusters[5]
+       # mapped_thrusters[3] = thrusters[1]
+       # mapped_thrusters[4] = invert_thrust(thrusters[7])
+       # mapped_thrusters[5] = invert_thrust(thrusters[3])
+       # mapped_thrusters[6] = thrusters[0]
+       # mapped_thrusters[7] = thrusters[4]
+       # return mapped_thrusters
 
     # thrust callback function
     def thrust_received(self, msg):

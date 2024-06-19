@@ -1,3 +1,15 @@
 <launch>  
-  <node pkg="videos" exec="videos_launch.py" namespace="rov"/>
+  <node pkg="videos" exec="videos_launch.py" namespace="rov" name="front_cam">
+    <param name="dev_name" type="str" value="device=/dev/video2"/>
+    <param name="port_num" type="str" value="5600"/>
+  </node>
+  
+  <node pkg="videos" exec="videos_launch.py" namespace="rov" name="down_cam">
+    <param name="dev_name" type="str" value="device=/dev/video6"/>
+    <param name="port_num" type="str" value="5601"/>
+  </node>
+  <node pkg="videos" exec="videos_launch.py" namespace="rov" name="aft_cam">
+      <param name="dev_name" type="str" value="device=/dev/video17"/>
+      <param name="port_num" type="str" value="5602"/>
+  </node>
 </launch>

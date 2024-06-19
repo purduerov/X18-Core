@@ -1,0 +1,3 @@
+<launch>  
+  <node pkg="videos" exec="videos_launch.py" namespace="rov"/>
+</launch>

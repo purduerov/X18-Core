@@ -1,0 +1,9 @@
+launch:
+  nodes:
+    - pkg: thrust_control
+      exec: ROV_main.py
+      namespace: rov
+
+    - pkg: thrust_control
+      exec: thrust_control.py
+      namespace: rov

@@ -12,14 +12,16 @@ gpio_pins = [16, 23, 24, 25]
 
 class Tools(Node):
     def __init__(self):
-        super().__init__('solenoid_tools')
+        super().__init__("solenoid_tools")
 
         GPIO.setmode(GPIO.BCM)
         for i in gpio_pins:
             print(i)
             GPIO.setup(i, GPIO.OUT, initial=GPIO.LOW)
 
-        self.sub = self.create_subscription(ToolsCommandMsg, '/tools', self.message_received, 10)
+        self.sub = self.create_subscription(
+            ToolsCommandMsg, "/tools", self.message_received, 10
+        )
 
     def message_received(self, msg):
         toolsarr = msg.tools
@@ -28,7 +30,7 @@ class Tools(Node):
         ghost_pin = gpio_pins[1]
         secondary_pin = gpio_pins[3]
 
-        if (toolsarr[0]):
+        if toolsarr[0]:
             GPIO.output(pm_pin, GPIO.HIGH)
             print("1 high")
         else:

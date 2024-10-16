@@ -5,14 +5,17 @@ from rclpy.node import Node
 
 from shared_msgs.msg import FinalThrustMsg, SPITestMsg
 
+
 class SPITest(Node):
     def __init__(self):
-        super().__init__('test_thrust_spi')
+        super().__init__("test_thrust_spi")
 
         # initialize publishers and subscriber
-        self.command_publisher = self.create_publisher(SPITestMsg, 'SPI_command', 10)
-        self.spi_sub = self.create_subscription(SPITestMsg, 'SPI_command', self.callback, 10)
-        self.thrust_pub = self.create_publisher(FinalThrustMsg, 'final_thrust', 10)
+        self.command_publisher = self.create_publisher(SPITestMsg, "SPI_command", 10)
+        self.spi_sub = self.create_subscription(
+            SPITestMsg, "SPI_command", self.callback, 10
+        )
+        self.thrust_pub = self.create_publisher(FinalThrustMsg, "final_thrust", 10)
 
         logger = self.get_logger().info("TEST INITIALIZATION")
 
@@ -68,6 +71,7 @@ class SPITest(Node):
         tcm.thrusters = bytearray(thrusters)
         self.thrust_pub.publish(tcm)
 
+
 def main(args=None):
     rclpy.init(args=args)
     node = SPITest()
@@ -79,6 +83,7 @@ def main(args=None):
 
     node.destroy_node()
     rclpy.shutdown()
+
 
 if __name__ == "__main__":
     main()

@@ -10,25 +10,26 @@ import RPi.GPIO as GPIO
 
 from shared_msgs.msg import ToolsCommandMsg
 
+
 class ToolsToSPINode(Node):
     # initialize class globals
-    ZERO_TOOLS = [127, 127, 127, 127] # power of thrusters where 127 is neutral
+    ZERO_TOOLS = [127, 127, 127, 127]  # power of thrusters where 127 is neutral
     FULL_THRUST_CONTROL = 2
     identifier = 0
     blocked = False
 
     def __init__(self, bus=0, device=1, mode=0, speed=50000, bits_per_word=8):
-        super().__init__('tools_to_spi')
+        super().__init__("tools_to_spi")
 
         # initialize logger
         logger = self.get_logger().info("INITIALIZED")
 
-        # initialize SPI 
+        # initialize SPI
         self.spi = SpiDev(bus, device)
         self.spi.mode = mode
         self.spi.max_speed_hz = speed
         self.spi.bits_per_word = bits_per_word
-        
+
         # initialize values
         self.tools = self.ZERO_TOOLS
         self.pin = 8
@@ -40,10 +41,10 @@ class ToolsToSPINode(Node):
 
         # Subscribe to topics and start callback function
         self.sub = self.create_subscription(
-            ToolsCommandMsg, # message
-            'tools_control', # topic
-            self.tools_received, # callback function
-            10
+            ToolsCommandMsg,  # message
+            "tools_control",  # topic
+            self.tools_received,  # callback function
+            10,
         )
 
         return
@@ -56,8 +57,8 @@ class ToolsToSPINode(Node):
         return
 
     # update values and send message when new message is received
-    def message_received(self): 
-        if (not self.blocked):    
+    def message_received(self):
+        if not self.blocked:
             self.type = self.FULL_THRUST_CONTROL
             self.set_message_id()
             response = self.transfer(self.format_message())
@@ -71,13 +72,13 @@ class ToolsToSPINode(Node):
         else:
             self.identifier += 1
         return
-    
+
     # split integer into bytes, returns only first two
     def split_bytes(self, num):
         byte2 = num & 0xFF
         byte1 = (num >> 8) & 0xFF
         return [byte1, byte2]
-   
+
     # swap the first and second bytes in a two-byte list
     def swap_bytes(self, bytes_list):
         bytes_list = [bytes_list[1], bytes_list[0]]
@@ -95,44 +96,48 @@ class ToolsToSPINode(Node):
         formatted = bytearray(message)
         return formatted
 
-    # prepares input and calls the Crc32Mpeg2 CRC function 
+    # prepares input and calls the Crc32Mpeg2 CRC function
     def compute_crc(self, message):
         message_list = []
         for item in message:
             message_list.extend([0x00, 0x00, 0x00, item])
         self.crc = Crc32Mpeg2.calc(message_list)
         return
-    '''
+
+    """
     message: 15 32-bit values
     input data format: words
     polynomial = 0x4C11DB7
-    '''
-    
+    """
+
     # sends the message and ~[pulls Chip Select pin low]
     def transfer(self, message):
         print("MASTER: ", list(message))
-        if (not self.blocked):
+        if not self.blocked:
             # GPIO.output(self.pin, GPIO.LOW)
             response = self.spi.xfer3(message)
             # GPIO.output(self.pin, GPIO.HIGH)
         return response
-    
+
     # sends data to allow slave response
     def response_handler(self, response):
-        if (not self.blocked):
+        if not self.blocked:
             time.sleep(0.0001)
             message = [0] * 9
             # GPIO.output(self.pin, GPIO.LOW)
             response = list(self.spi.xfer3(bytearray(message)))
-            if (response[7] != self.prev_message[7] or response[8] != self.prev_message[8]):
+            if (
+                response[7] != self.prev_message[7]
+                or response[8] != self.prev_message[8]
+            ):
                 print("ERROR: CRC VALUES DO NOT MATCH")
             # GPIO.output(self.pin, GPIO.HIGH)
             print("SLAVE: ", response)
-        return 
+        return
 
     # called when Ctrl-C is press, sends stop thrusters and closes ports
     def handler(self):
-        print('trl-C detected')
+        print("trl-C detected")
         self.blocked = True
         self.type = self.FULL_THRUST_CONTROL
         self.identifier = 0
@@ -144,8 +149,9 @@ class ToolsToSPINode(Node):
         # GPIO.output(self.pin, GPIO.HIGH)
         self.spi.close()
         GPIO.cleanup()
-        print('Closed')
+        print("Closed")
         exit(1)
+
 
 def main(args=None):
     # initialize node and ROS
@@ -168,6 +174,7 @@ def main(args=None):
     node.destroy_node()
     rclpy.shutdown()
     GPIO.cleanup()
+
 
 if __name__ == "__main__":
     main()

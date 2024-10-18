@@ -1,5 +1,5 @@
 launch:
   - node:
-    - pkg: tools
+      pkg: tools
       exec: tools_to_gpio.py
       namespace: rov

@@ -1,7 +1,0 @@
-<launch>
-  <node pkg="sensors" exec="leak_sensor.py" namespace="rov"/>
-  <node pkg="sensors" exec="depth_sense.py" namespace="rov"/>
-  <!--<node pkg="sensors" exec="imu_sensor.py" namespace="rov"/>-->
-  <node pkg="sensors" exec="pi_temp.py" namespace="rov"/>
-  <node pkg="sensors" exec="water_temp.py" namespace="rov"/>
-</launch>

@@ -1,7 +1,4 @@
 name: X17-Core Build Test
-
-# Controls when the action will run. 
-# Workflow runs when manually triggered using the UI, or when a push or pull request is made to the main branch
 on:
   push:
     branches:
@@ -13,40 +10,36 @@ on:
 
 jobs:
   build:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-22.04  # Use Ubuntu 22.04 (Jammy) for ROS 2 Humble
     steps:
       # Check out the repository
       - name: Checkout code
         uses: actions/checkout@v4
-
-      # Set up ROS 2 (Jazzy)
+      
+      # Set up ROS 2 (Humble)
       - name: Set up ROS 2
-        uses: ros-tooling/setup-ros@v0.8
+        uses: ros-tooling/setup-ros@v0.7
         with:
           required-ros-distributions: humble
-
+      
       # Install dependencies from requirements.txt
       - name: Install dependencies
         run: |
-          sudo apt-get -y update
-          sudo apt-get -y install python3-pip
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
           pip3 install -r requirements.txt
-
-      # Run the build script
+      
+      # Rest of your steps remain the same
       - name: Build
         run: |
           chmod +x scripts/build.sh
           scripts/build.sh
-
-      # Run the run script
+      
       - name: Run
         run: |
           chmod +x scripts/run.sh
           scripts/run.sh
-
-      # Verify active nodes
+      
       - name: Verify nodes
         run: |
           EXPECTED_NODES="/rov/ROV_main /rov/thrust_control /rov/thrust_to_spi"
@@ -58,8 +51,6 @@ jobs:
             fi
           done
           echo "All nodes successfully launched."
-
-      # Success message
+      
       - name: Success
         run: echo "Success!"
-      

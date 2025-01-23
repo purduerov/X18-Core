@@ -27,7 +27,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip
-          pip3 install -r requirements.txt
       
       # Rest of your steps remain the same
       - name: Build

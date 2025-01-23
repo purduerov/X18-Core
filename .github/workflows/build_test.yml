@@ -41,6 +41,7 @@ jobs:
       
       - name: Verify nodes
         run: |
+          source /opt/ros/humble/setup.bash
           EXPECTED_NODES="/rov/ROV_main /rov/thrust_control /rov/thrust_to_spi"
           NODE_LIST=$(ros2 node list)
           for NODE in $EXPECTED_NODES; do

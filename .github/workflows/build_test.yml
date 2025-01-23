@@ -1,0 +1,52 @@
+name: X17-Core Build Test
+
+# Controls when the action will run. 
+# Workflow runs when manually triggered using the UI, or when a push or pull request is made to the main branch
+on:
+  push:
+    branches:
+      - camera_get_ip
+  pull_request:
+    branches:
+      - camera_get_ip
+  workflow_dispatch:
+
+jobs:
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up ROS 2 (Jazzy)
+      - name: Set up ROS 2
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: humble
+
+      # Install dependencies from requirements.txt
+      - name: Install dependencies
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install python3-pip
+          pip3 install -r requirements.txt
+
+      # Run the build script
+      - name: Build
+        run: |
+          chmod +x scripts/build.sh
+          scripts/build.sh
+
+      # Run the run script
+      - name: Run
+        run: |
+          chmod +x scripts/run.sh
+          scripts/run.sh
+
+      # Success message
+      - name: Success
+        run: echo "Success!"
+      

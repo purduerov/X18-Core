@@ -1,0 +1,27 @@
+{
+    "name": "X17-Core Dev Container",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-iot.vscode-ros",          // ROS extension
+                "ms-python.python",           // Python extension (if needed)
+                "ms-azuretools.vscode-docker" // Docker extension
+            ],
+            "settings": {
+                "terminal.integrated.shell.linux": "/bin/bash"
+            }
+        }
+    },
+    "mounts": [
+        "source=${localWorkspaceFolder}/,target=/workspace,type=bind"
+    ],
+    "runArgs": [
+        "--network", "host"     // Use host network
+    ],
+    "remoteUser": "root",
+    "postCreateCommand": "echo 'source /opt/ros/humble/setup.bash' >> /root/.bashrc"
+}

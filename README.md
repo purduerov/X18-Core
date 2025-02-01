@@ -18,6 +18,8 @@ source install/setup.bash
 
 On the device to run X17-Core (typically the Raspberry Pi), create a directory called ```ros2_ws```, within this work space create another directory called ```src```. Inside the ```src``` directory, clone this repository. While inside the ```ros2_ws``` directory, run the command ```source /opt/ros/humble/setup.bash```. ROS2 (Humble) needs to be installed for this work; the installation commands are found in https://docs.ros.org/en/humble/Installation.html. The source command will "initialize" ROS2 on the device. From there, run ```colcon build``` which will create the executables that will run. After that completes, run the command ```. install/setup.bash```. To run specific files, do the command ```ros2 run _project-name_ _file-name_```. To have multiple files running, you can open multiple terminals and run that command for each file. 
 
+To publish to a topic, use the command ```ros2 topic pub /final_thrust shared_msgs/FinalThrustMsg "thrusters: [127,127,127,127,127,127,127,127]"```
+
 ## Communication Protocol
 
 X17-Core uses UART for its communication protocol between the Raspberry Pi and the STMs on the electrical boards. There are four different message types. 

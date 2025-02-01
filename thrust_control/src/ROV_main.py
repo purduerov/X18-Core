@@ -3,7 +3,7 @@ import rclpy
 from rclpy.node import Node
 
 from shared_msgs.msg import ThrustCommandMsg, RovVelocityCommand, ImuVelocityCommand
-from utils.utils.heartbeat_helper import HeartbeatHelper
+from utils.heartbeat_helper import HeartbeatHelper
 
 
 class ROVMainNode(Node):

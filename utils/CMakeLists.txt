@@ -13,7 +13,7 @@ find_package(rclpy REQUIRED)
 ament_python_install_package(${PROJECT_NAME})
 
 install(PROGRAMS
-  src/tools_to_gpio.py
+  utils/heartbeat_helper.py
   DESTINATION lib/${PROJECT_NAME}
 )
 # uncomment the following section in order to fill in

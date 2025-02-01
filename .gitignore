@@ -1,5 +1,7 @@
 .idea
 build
 install
+utils
 log
 .vscode
+!.vscode/settings.json

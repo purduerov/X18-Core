@@ -23,5 +23,5 @@
         "--network", "bridge"     // Use host network
     ],
     "remoteUser": "root",
-    "postCreateCommand": "echo 'source /opt/ros/humble/setup.bash' >> /root/.bashrc"
+    "postCreateCommand": "echo 'source /opt/ros/humble/setup.bash' >> /root/.bashrc && echo 'export ROS_DOMAIN_ID=69' >> /root/.bashrc"
 }

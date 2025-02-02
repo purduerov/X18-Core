@@ -1,8 +1,11 @@
 #! /usr/bin/python3
+
 import rclpy
 from rclpy.node import Node
-
 from std_msgs.msg import Float64
+
+# Library for the depth sensor
+# More info: https://github.com/bluerobotics/ms5837-python
 import ms5837
 
 

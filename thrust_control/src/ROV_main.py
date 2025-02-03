@@ -3,6 +3,7 @@ import rclpy
 from rclpy.node import Node
 
 from shared_msgs.msg import ThrustCommandMsg, RovVelocityCommand, ImuVelocityCommand
+from utils.heartbeat_helper import HeartbeatHelper
 
 
 class ROVMainNode(Node):
@@ -17,6 +18,9 @@ class ROVMainNode(Node):
 
     def __init__(self):
         super().__init__("ROV_main")
+
+        # Heartbeat
+        self.heartbeat_helper = HeartbeatHelper(self)
 
         self.controller_sub = self.create_subscription(
             RovVelocityCommand, "/rov_velocity", self._controller_input, 10

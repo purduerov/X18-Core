@@ -9,10 +9,8 @@ class Camera(Node):
     def __init__(self):
         super().__init__("cameras")
         self.declare_parameter("dev_name", "device=/dev/video2")
-        self.declare_parameter("port_num", "5600")
 
         dev_name = self.get_parameter("dev_name").get_parameter_value().string_value
-        port = self.get_parameter("port_num").get_parameter_value().string_value
 
         while True:
             subprocess.run(

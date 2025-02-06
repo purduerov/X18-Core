@@ -3,6 +3,7 @@
 # Import necessary libraries
 import rclpy
 import ipaddress
+import subprocess
 from rclpy.node import Node
 from std_msgs.msg import String
 
@@ -32,7 +33,18 @@ class IpSubscriberNode(Node):
             self.get_logger().info(f'Invalid IP received from topic: "{msg.data}"')
 
     def launch_camera(self, ip):
-        pass
+        # Run command: v4l2-ctl --list-devices
+        list_devices = subprocess.Popen(["v4l2-ctl", "--list-devices"], stdout=subprocess.PIPE, text=True)
+
+        # Search for explorer HD cameras and launch the third device name
+        counter = 0
+        camera_name = ""
+        for line in list_devices.stdout:
+            if counter == 3:
+                camera_name = line
+            if "explorerHD" in line:
+                counter = 0
+            counter += 1   
 
     def publish_stop(self):
         msg = "STOP"

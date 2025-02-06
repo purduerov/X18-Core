@@ -13,6 +13,7 @@ class IpSubscriberNode(Node):
         super().__init__('ip_subscriber_node')
         
         self.create_subscription(String, 'surface_ip', self.get_ip, 10)
+        self.launch_camera("192.168.1.1")
         
 
     def get_ip(self, msg):
@@ -34,17 +35,22 @@ class IpSubscriberNode(Node):
 
     def launch_camera(self, ip):
         # Run command: v4l2-ctl --list-devices
-        list_devices = subprocess.Popen(["v4l2-ctl", "--list-devices"], stdout=subprocess.PIPE, text=True)
-
-        # Search for explorer HD cameras and launch the third device name
-        counter = 0
-        camera_name = ""
-        for line in list_devices.stdout:
-            if counter == 3:
-                camera_name = line
-            if "explorerHD" in line:
-                counter = 0
-            counter += 1   
+        lines = subprocess.Popen(["v4l2-ctl", "--list-devices"], stdout=subprocess.PIPE, text=True).splitlines()
+        explorehd_devices = []
+        i = 0
+        while i < len(lines):
+            if "exploreHD" in lines[i]:
+                devices = []
+                i += 1
+                while i < len(lines) and lines[i].startswith("\t"):
+                    devices.append(lines[i].strip())
+                    i += 1
+                if len(devices) >= 3:
+                    explorehd_devices.append(devices[2])  # Third device (0-based index)
+            else:
+                i += 1
+        
+        self.logger().info(f"explorehd_devices: {explorehd_devices}")
 
     def publish_stop(self):
         msg = "STOP"

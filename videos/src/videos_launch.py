@@ -8,36 +8,24 @@ import subprocess
 class Camera(Node):
     def __init__(self):
         super().__init__("cameras")
-        self.declare_parameter("dev_name", "device=/dev/video2")
+        self.declare_parameter("ip", "192.168.1.23")
+        self.declare_parameter("device", "device=/dev/video2")
 
-        dev_name = self.get_parameter("dev_name").get_parameter_value().string_value
+        ip_address = self.get_parameter("ip").get_parameter_value().string_value
+        dev_name = self.get_parameter("device").get_parameter_value().string_value
+
+        # Define RTSP stream URL 
+        rtsp_url = "rtsp://{ip_address}:8554/{dev_name}"
 
         while True:
             subprocess.run(
                 [
-                    "gst-launch-1.0",
-                    "-v",
-                    "v4l2src",
-                    dev_name,
-                    "!",
-                    "video/x-h264,width=1920,height=1080",
-                    "!",
-                    "h264parse",
-                    "!",
-                    "queue",
-                    "!",
-                    "rtph264pay",
-                    "config-interval=10",
-                    "pt=96",
-                    "!",
-                    "udpsink",
-                    "host=224.1.1.1",
-                    "auto-multicast=true",
-                    "port=" + port,
-                    "sync=false",
-                    "buffer-size=1048576",
+                    "ffmpeg", "-f", "v4l2", "--fflags", "nobuffer", 
+                    "-i", dev_name, "-vcodec", "copy", "-g", "10",
+                    "-f", "rtsp", rtsp_url
                 ]
             )
+
 
 
 def main(args=None):

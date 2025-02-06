@@ -57,8 +57,11 @@ class IpSubscriberNode(Node):
         for device in explorehd_devices:
             self.get_logger().info(f"Launching node with device: {device}")
             # Add your node launch logic here
-            # thread = threading.Thread(target=subprocess.run, args=(["ros2", "run", "videos", "videos_launch.py", "--ros-args", device]))
-            # thread.start()
+            # Construct the command with f-strings
+            cmd = ["ros2", "run", "videos", "videos_launch.py", "--ros-args", "-p", f"ip:={ip}", "-p", f"device:={device}"]
+            # Run in a thread
+            thread = threading.Thread(target=subprocess.run, args=(cmd,), kwargs={"check": True})
+            thread.start()
         
 
     def publish_stop(self):

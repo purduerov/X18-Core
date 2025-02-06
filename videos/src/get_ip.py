@@ -7,11 +7,15 @@ import subprocess
 from rclpy.node import Node
 from std_msgs.msg import String
 import threading
+from utils.heartbeat_helper import HeartbeatHelper
 
 
 class IpSubscriberNode(Node):
     def __init__(self):
         super().__init__('ip_subscriber_node')
+
+        # Set up heartbeat
+        self.heartbeat_helper = HeartbeatHelper(self)
         
         self.create_subscription(String, 'surface_ip', self.get_ip, 10)
         # self.launch_camera("192.168.1.23")
@@ -36,13 +40,40 @@ class IpSubscriberNode(Node):
             self.get_logger().info(f'Invalid IP received from topic: "{msg.data}"')
 
     def launch_camera(self, ip):
-        self.get_logger().info(f"Launching camera with IP: {ip}")
+        # Find camera devices
+        explorehd_devices = self.find_camera_devices()
+        # Launch nodes with the discovered devices
+        i = 1
+        for camera in explorehd_devices:
+            if i > 4:
+                self.get_logger().info("Camera limit reached, not launching more nodes.")
+                break
+            else:
+                self.get_logger().info(f"Launching node with camera: {camera}, to camera number: {i}")
+                # Construct the command with f-strings
+                cmd = [
+                    "ros2",
+                    "run", 
+                    "videos", 
+                    "videos_launch.py", 
+                    "--ros-args", 
+                    "-p", f"ip:={ip}", 
+                    "-p", f"device:={camera}", 
+                    "-p", f"camera_number:={i}", 
+                    "-r", f"__node:=camera{i}"
+                    ]
+                # Run in a thread
+                thread = threading.Thread(target=subprocess.run, args=(cmd,), kwargs={"check": True})
+                thread.start()
+                i += 1
+
+    def find_camera_devices(self):
         # Run command: v4l2-ctl --list-devices
         output = subprocess.run(["v4l2-ctl", "--list-devices"], capture_output=True, text=True).stdout
-        self.get_logger().info(f"Output of v4l2-ctl --list-devices: {output}")
         lines = output.splitlines()
         explorehd_devices = []
         i = 0
+        # Find the lines with "exploreHD" and get the third device
         while i < len(lines):
             if "exploreHD" in lines[i]:
                 devices = []
@@ -55,25 +86,9 @@ class IpSubscriberNode(Node):
             else:
                 i += 1
 
-        self.get_logger().info(f"Discovered devices: {explorehd_devices}")
+        self.get_logger().info(f"Discovered cameras: {explorehd_devices}")
 
-        # Launch nodes with the discovered devices
-        i = 1
-        for device in explorehd_devices:
-            if i > 4:
-                self.get_logger().info("Device limit reached, not launching more nodes.")
-                break
-            else:
-                self.get_logger().info(f"Launching node with device: {device}, to camera number: {i}")
-                # Add your node launch logic here
-                # Construct the command with f-strings
-                cmd = ["ros2", "run", "videos", "videos_launch.py", "--ros-args", "-p", f"ip:={ip}", "-p", f"device:={device}", "-p", f"camera_number:={i}"]
-                # Run in a thread
-                thread = threading.Thread(target=subprocess.run, args=(cmd,), kwargs={"check": True})
-                thread.start()
-                i += 1
         
-
     def publish_stop(self):
         msg = "STOP"
 

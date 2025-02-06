@@ -41,10 +41,10 @@ class IpSubscriberNode(Node):
 
     def launch_camera(self, ip):
         # Find camera devices
-        explorehd_devices = self.find_camera_devices()
+        cameras = self.find_camera_devices()
         # Launch nodes with the discovered devices
         i = 1
-        for camera in explorehd_devices:
+        for camera in cameras:
             if i > 4:
                 self.get_logger().info("Camera limit reached, not launching more nodes.")
                 break
@@ -71,7 +71,7 @@ class IpSubscriberNode(Node):
         # Run command: v4l2-ctl --list-devices
         output = subprocess.run(["v4l2-ctl", "--list-devices"], capture_output=True, text=True).stdout
         lines = output.splitlines()
-        explorehd_devices = []
+        cameras = []
         i = 0
         # Find the lines with "exploreHD" and get the third device
         while i < len(lines):
@@ -82,11 +82,11 @@ class IpSubscriberNode(Node):
                     devices.append(lines[i].strip())
                     i += 1
                 if len(devices) >= 3:
-                    explorehd_devices.append(devices[2])  # Third device (0-based index)
+                    cameras.append(devices[2])  # Third device (0-based index)
             else:
                 i += 1
 
-        self.get_logger().info(f"Discovered cameras: {explorehd_devices}")
+        self.get_logger().info(f"Discovered cameras: {cameras}")
 
         
     def publish_stop(self):

@@ -6,13 +6,14 @@ import ipaddress
 import subprocess
 from rclpy.node import Node
 from std_msgs.msg import String
+import threading
 
 
 class IpSubscriberNode(Node):
     def __init__(self):
         super().__init__('ip_subscriber_node')
         
-        self.create_subscription(String, 'surface_ip', self.get_ip, 10)
+        # self.create_subscription(String, 'surface_ip', self.get_ip, 10)
         self.launch_camera("192.168.1.1")
         
 
@@ -29,13 +30,15 @@ class IpSubscriberNode(Node):
             self.get_logger().info(f'Received from surface_ip topic: "{msg.data}"')
 
             ## Subprocess command
+            self.launch_camera(received_ip)
 
         except ValueError:
             self.get_logger().info(f'Invalid IP received from topic: "{msg.data}"')
 
     def launch_camera(self, ip):
         # Run command: v4l2-ctl --list-devices
-        lines = subprocess.Popen(["v4l2-ctl", "--list-devices"], stdout=subprocess.PIPE, text=True).splitlines()
+        output = subprocess.run(["v4l2-ctl", "--list-devices"], capture_output=True, text=True).stdout
+        lines = output.splitlines()
         explorehd_devices = []
         i = 0
         while i < len(lines):
@@ -49,8 +52,14 @@ class IpSubscriberNode(Node):
                     explorehd_devices.append(devices[2])  # Third device (0-based index)
             else:
                 i += 1
+
+        # Launch nodes with the discovered devices
+        for device in explorehd_devices:
+            self.get_logger().info(f"Launching node with device: {device}")
+            # Add your node launch logic here
+            # thread = threading.Thread(target=subprocess.run, args=(["ros2", "run", "videos", "videos_launch.py", "--ros-args", device]))
+            # thread.start()
         
-        self.logger().info(f"explorehd_devices: {explorehd_devices}")
 
     def publish_stop(self):
         msg = "STOP"
@@ -64,9 +73,9 @@ class IpSubscriberNode(Node):
 
 def main():
     rclpy.init()
-    IpSubscriberNode = IpSubscriberNode()
-    rclpy.spin(IpSubscriberNode)
-    IpSubscriberNode.destroy_node()
+    node = IpSubscriberNode()
+    rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()
 
 if __name__ == "__main__":

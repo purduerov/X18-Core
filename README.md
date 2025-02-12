@@ -23,14 +23,14 @@ source install/setup.bash
 4. Enter src directory and clone this repository inside src using ```git clone _ssh-link_``` (Might need to setup an SSH key for the raspberry pi)
 5. Go back to ```ros2_ws``` directory using ```cd ..```
 
-### Prepare code for execution
+### Prepare code for execution (Needs to be done for each new terminal)
 1. Enter the ```ros2_ws``` using ```cd ros2_ws```
 2. Run the command ```source /opt/ros/humble/setup.bash``` (Note ROS2 needs to be installed https://docs.ros.org/en/humble/Installation.html)
 3. Run the command ```colcon build``` (If colcon not installed, run ```sudo apt install python3-colcon-common-extensions```)
 4. Once completed without errors, run ```. install/setup.bash```
 
 ### Running code with ROS2
-1. Follow all the steps in Prepare code for execution
+1. Follow all the steps in Prepare code for execution (Needs to be repeated every time a change is made)
 2. To run a specific file, run the command ```ros2 run _project-name_ _file-name_``` (Multiple files can be ran at once, each one requires a new terminal window)
 3. To publish to a topic, run the command ```ros2 topic pub /_topic-name_ shared_msgs/_msg-name_ "_message-structure-with-values_"``` (Example shown below)
 

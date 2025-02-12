@@ -16,9 +16,25 @@ source install/setup.bash
 
 ## ROS2 Commands
 
-On the device to run X17-Core (typically the Raspberry Pi), create a directory called ```ros2_ws```, within this work space create another directory called ```src```. Inside the ```src``` directory, clone this repository. While inside the ```ros2_ws``` directory, run the command ```source /opt/ros/humble/setup.bash```. ROS2 (Humble) needs to be installed for this work; the installation commands are found in https://docs.ros.org/en/humble/Installation.html. The source command will "initialize" ROS2 on the device. From there, run ```colcon build``` which will create the executables that will run. After that completes, run the command ```. install/setup.bash```. To run specific files, do the command ```ros2 run _project-name_ _file-name_```. To have multiple files running, you can open multiple terminals and run that command for each file. 
+### Setup ROS2 Workspace (where all ROS2 files will be located)
+1. Create a directory using  ```mkdir ros2_ws```
+2. Enter the ```ros2_ws``` using ```cd ros2_ws```
+3. Create another directory using ```mkdir src```
+4. Enter src directory and clone this repository inside src using ```git clone _ssh-link_``` (Might need to setup an SSH key for the raspberry pi)
+5. Go back to ```ros2_ws``` directory using ```cd ..```
 
-To publish to a topic, use the command ```ros2 topic pub /final_thrust shared_msgs/FinalThrustMsg "thrusters: [127,127,127,127,127,127,127,127]"```
+### Prepare code for execution
+1. Enter the ```ros2_ws``` using ```cd ros2_ws```
+2. Run the command ```source /opt/ros/humble/setup.bash``` (Note ROS2 needs to be installed https://docs.ros.org/en/humble/Installation.html)
+3. Run the command ```colcon build``` (If colcon not installed, run ```sudo apt install python3-colcon-common-extensions```)
+4. Once completed without errors, run ```. install/setup.bash```
+
+### Running code with ROS2
+1. Follow all the steps in Prepare code for execution
+2. To run a specific file, run the command ```ros2 run _project-name_ _file-name_``` (Multiple files can be ran at once, each one requires a new terminal window)
+3. To publish to a topic, run the command ```ros2 topic pub /_topic-name_ shared_msgs/_msg-name_ "_message-structure-with-values_"``` (Example shown below)
+
+Example publisher: ```ros2 topic pub /final_thrust shared_msgs/FinalThrustMsg "thrusters: [127,127,127,127,127,127,127,127]"```
 
 ## Communication Protocol
 

@@ -1,18 +1,10 @@
 # X17-Core
 
-Contains all ROS nodes for X-17 that run on Raspberry Pi 4
+Contains all ROS nodes for X-17 that run on Raspberry Pi 4. The Raspberry Pi 4 acts as the intermediary between the laptop on the surface (WiFi network) and the electrical boards on the ROV (hardware connections). Computation does occur on the Raspberry Pi, but it should be limited due to power and heating constraints. This repository contains the code for thrust-related functionality, sensors, tools, and video processing. 
 
-## Communication Protocol
+## General Repository 
 
-X17-Core uses UART for its communication protocol between the Raspberry Pi and the STMs on the electrical boards. There are four different message types. 
-- Thrust data message
-- ESC data message
-- Power data message
-- Tools data message
-
-The UART protocol used will not have parity bits enabled. It will be running at a baud rate of 9600. Each message has a device ID which is the ID of the destination of the message. Each message will also have CRC which uses the CRC-32 MPEG2 polynomial, however, we only save the last 8-bits of the 32-bit CRC value. There are two UART lines, one for the tools, and one for the thrusters/ESC/power bricks. The acknowledge will be of the same structure as the data messages. 
-
-## ROV Launch Commands
+### ROV Launch Commands
 
 The launch file can be found in the `rov_launch` folder. The launch file is called `core_launch.yaml`
 
@@ -26,6 +18,15 @@ If you need to build and source the workspace, you can use the following command
 colcon build
 source install/setup.bash
 ```
+
+### Communication Protocol
+X17-Core uses UART for its communication protocol between the Raspberry Pi and the STMs on the electrical boards. There are four different message types. 
+- Thrust data message
+- ESC data message
+- Power data message
+- Tools data message
+
+The UART protocol used will not have parity bits enabled. It will be running at a baud rate of 9600. Each message has a device ID which is the ID of the destination of the message. Each message will also have CRC which uses the CRC-32 MPEG2 polynomial, however, we only save the last 8-bits of the 32-bit CRC value. There are two UART lines, one for the tools, and one for the thrusters/ESC/power bricks. The acknowledge will be of the same structure as the data messages. 
 
 ## ROS2
 
@@ -78,9 +79,7 @@ Example ```ros2_ws``` directory:
 
 Example ```CMakeLists.txt``` install section: 
 
-install(PROGRAMS <br />
-  src/ROV_main.py <br />
-  src/packets.py <br />
+install(PROGRAMS <br />  src/ROV_main.py <br />  src/packets.py <br />
   src/test_thrust_spi.py <br />
   src/thrust_control.py <br />
   src/thrust_mapping.py <br />
@@ -92,11 +91,9 @@ install(PROGRAMS <br />
 ## Raspberry Pi
 
 ### SSH into a Raspberry Pi
-
 The Raspberry Pi 4 should be turned on, indicated with a red LED by the USB-C power-in. Ensure that both the Raspberry Pi and the device that will be sshing into the Raspberry Pi are connected to the same WiFi network. You will need the IP address of the Raspberry Pi. To view all devices and their IP addresses on the current network, go to 192.168.1.1 in any browser. The username is admin and the password is Yourmother (very funny I know, but it's historial). Once logged into the network settings, go to the attached devices. There should be a list of devices and their IP addresses. To ssh into the Pi, run the command ```ssh pi@IP_ADDRESS```. Enter the password that the Raspberry Pi was given (should be ```pie``` for all). A direct ssh connection can be created through VS Code for an easier coding experience. 
 
 ### Creating an GitHub ssh key for Raspberry Pi
-
 This is the official guide for creating an ssh key on GitHub:
 https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account
 

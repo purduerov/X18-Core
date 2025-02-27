@@ -85,3 +85,18 @@ X17-Core uses UART for its communication protocol between the Raspberry Pi and t
 - Tools data message
 
 The UART protocol used will not have parity bits enabled. It will be running at a baud rate of 9600. Each message has a device ID which is the ID of the destination of the message. Each message will also have CRC which uses the CRC-32 MPEG2 polynomial, however, we only save the last 8-bits of the 32-bit CRC value. There are two UART lines, one for the tools, and one for the thrusters/ESC/power bricks. The acknowledge will be of the same structure as the data messages. 
+
+
+### Raspberry Pi 
+
+## SSH into a Raspberry Pi
+
+The Raspberry Pi 4 should be turned on, indicated with a red LED by the USB-C power-in. Ensure that both the Raspberry Pi and the device that will be sshing into the Raspberry Pi are connected to the same WiFi network. You will need the IP address of the Raspberry Pi. To view all devices and their IP addresses on the current network, go to 192.168.1.1 in any browser. The username is admin and the password is Yourmother (very funny I know, but it's historial). Once logged into the network settings, go to the attached devices. There should be a list of devices and their IP addresses. To ssh into the Pi, run the command ```ssh pi@IP_ADDRESS```. Enter the password that the Raspberry Pi was given (should be ```pie``` for all). A direct ssh connection can be created through VS Code for an easier coding experience. 
+
+## Creating an GitHub ssh key for Raspberry Pi
+
+This is the official guide for creating an ssh key on GitHub
+
+https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account
+
+The key will be tied to someone's account, but all of the commands in the guide above will be done on the Raspberry Pi itself.

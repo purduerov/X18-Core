@@ -2,6 +2,18 @@
 
 Contains all ROS nodes for X-17 that run on Raspberry Pi 4
 
+## Communication Protocol
+
+X17-Core uses UART for its communication protocol between the Raspberry Pi and the STMs on the electrical boards. There are four different message types. 
+- Thrust data message
+- ESC data message
+- Power data message
+- Tools data message
+
+The UART protocol used will not have parity bits enabled. It will be running at a baud rate of 9600. Each message has a device ID which is the ID of the destination of the message. Each message will also have CRC which uses the CRC-32 MPEG2 polynomial, however, we only save the last 8-bits of the 32-bit CRC value. There are two UART lines, one for the tools, and one for the thrusters/ESC/power bricks. The acknowledge will be of the same structure as the data messages. 
+
+## ROV Launch Commands
+
 The launch file can be found in the `rov_launch` folder. The launch file is called `core_launch.yaml`
 
 The launch file can be run using the following command:
@@ -15,7 +27,7 @@ colcon build
 source install/setup.bash
 ```
 
-## ROS2 Commands
+## ROS2
 
 ### Setup ROS2 Workspace (where all ROS2 files will be located)
 1. Create a directory using  ```mkdir ros2_ws```
@@ -77,18 +89,7 @@ install(PROGRAMS <br />
   DESTINATION lib/${PROJECT_NAME} <br />
 )
 
-## Communication Protocol
-
-X17-Core uses UART for its communication protocol between the Raspberry Pi and the STMs on the electrical boards. There are four different message types. 
-- Thrust data message
-- ESC data message
-- Power data message
-- Tools data message
-
-The UART protocol used will not have parity bits enabled. It will be running at a baud rate of 9600. Each message has a device ID which is the ID of the destination of the message. Each message will also have CRC which uses the CRC-32 MPEG2 polynomial, however, we only save the last 8-bits of the 32-bit CRC value. There are two UART lines, one for the tools, and one for the thrusters/ESC/power bricks. The acknowledge will be of the same structure as the data messages. 
-
-
-## Raspberry Pi 
+## Raspberry Pi
 
 ### SSH into a Raspberry Pi
 

@@ -39,6 +39,31 @@ Example publisher: ```ros2 topic pub /final_thrust shared_msgs/FinalThrustMsg "t
 ### ROS2 file structure 
 Under the root of the repository, there will be different folders which are packages. Packages are used to group files with together, an example is the ```thrust_control``` folder. Each package directory will have launch folder, src folder, a folder with the same name as the package, a ```CMakeLists.txt```, and a ```package.xml``` file. The folder with the package name will have just an init.py file that is empty. The src folder will contain all of the python files that we have created containing the source code. The launch folder contains a yaml file that is used to launch the different files automatically. The ```package.xml``` file contains dependencies and information regarding the package. The ```CMakeLists.txt``` is what is used to compile all the files. All of the files location in the src folder should be added to the install(PROGRAMS ... ) section. An example is shown for the ```thrust_control``` file below. The ```shared_msgs``` is where all of the topic message structures are located. There is a msg folder containing a ```.msg``` file for each message which has the data structures used for each message. Each message file needs to be included in the ```CMakeLists.txt``` within the ```shared_msgs``` folder for ROS2 to find the messages.  
 
+Example directory:
+
+ros2_ws
+- src/
+  - XYY-Core/
+    - package_name/
+      - launch/
+        - package_name_launch.yml
+      - src/
+        - file_name1.py
+        - file_name2.py
+      - package_name/
+        - init.py (Empty file, do not touch)
+      - CMakeLists.txt
+      - package.xml
+    - shared_msgs/
+      - msg/
+        - message1.msg
+        - message2.msg
+      - CMakeLists.txt
+      - package.xml
+- install/
+- log/
+- build/
+
 Example ```CMakeLists.txt``` install section: 
 
 install(PROGRAMS

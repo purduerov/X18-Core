@@ -1,5 +1,6 @@
 #! /usr/bin/python3
 from packets import ThrustPacket, ESCPacket, PowerPacket
+import time
 import rclpy
 from rclpy.node import Node
 from crccheck.crc import Crc32Mpeg2
@@ -72,12 +73,46 @@ class ThrustToUARTNode(Node):
             self.identifier += 1
 
     def transfer(self, msg):
-        message = list(msg)
-        print([hex(byte) for byte in message])
+        self.last_message = list(msg)
+        print([hex(byte) for byte in self.last_message])
         #GPIO.output(23, GPIO.HIGH)
+        two_bytes = self.ser.read(2)
+        if not two_bytes:
+            print("ERROR: NO DATA RECEIVED")
         self.ser.write(msg)
         # GPIO.output(23, GPIO.LOW)
 
+
+    def response_handler(self):
+        if not self.blocked:
+            time.sleep(0.0001)
+
+            # Read available bytes from UART (assuming termination by timeout or known format)
+            response = self.ser.read(self.ser.in_waiting)  # Read all available bytes
+
+
+            if not response:
+                print("ERROR: No response received")
+                return
+
+            # Unpack the received response
+            received_packet = BasePacket.unpack(response, data_length=len(response) - 4)
+
+            if (received_packet.device_id != 1):
+                print("ERROR: INVALID DEVICE ID")
+                return
+            # Unpack the last sent message
+            sent_packet = BasePacket.unpack(self.last_message, data_length=len(self.last_message) - 4)
+
+            # Compare CRC values
+            if received_packet.crc != sent_packet.crc:
+                print("ERROR: CRC VALUES DO NOT MATCH")
+
+                # print("SLAVE: ", list(response))
+
+        return
+
+    
     def format_message(self):
         self.set_message_id()
         split_identifier = split_bytes(self.identifier)
@@ -93,6 +128,8 @@ class ThrustToUARTNode(Node):
         crc = Crc32Mpeg2.calc(message_list)
         print(hex(crc & 0xFF))
         return crc & 0xFF
+
+
 
     def handler(self):
         message_body = [self.THRUST_ID, 0, 0] + ([127] * 8)

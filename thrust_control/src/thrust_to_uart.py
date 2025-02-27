@@ -47,40 +47,39 @@ class ThrustToUARTNode(Node):
 
         return
 
-    def thrust_map(self, thrusters):
-        mapped_thrusters = [127] * 8
-
-        mapped_thrusters[0] = thrusters[6]
-        mapped_thrusters[1] = thrusters[2]
-        mapped_thrusters[2] = thrusters[5]
-        mapped_thrusters[3] = thrusters[1]
-        mapped_thrusters[4] = thrusters[7]
-        mapped_thrusters[5] = thrusters[3]
-        mapped_thrusters[6] = thrusters[0]
-        mapped_thrusters[7] = thrusters[4]
-
-        return mapped_thrusters
+    # def thrust_map(self, thrusters):
+    #     mapped_thrusters = [127] * 8
+    #     mapped_thrusters[0] = thrusters[6]
+    #     mapped_thrusters[1] = thrusters[2]
+    #     mapped_thrusters[2] = thrusters[5]
+    #     mapped_thrusters[3] = thrusters[1]
+    #     mapped_thrusters[4] = thrusters[7]
+    #     mapped_thrusters[5] = thrusters[3]
+    #     mapped_thrusters[6] = thrusters[0]
+    #     mapped_thrusters[7] = thrusters[4]
+    #     return mapped_thrusters
 
     def thrust_received(self, msg):
-        self.data = self.thrust_map(msg.thrusters)
+        self.data = msg.thrusters
         self.transfer(self.format_message())
-        print(self.ser.read(12))
+        return
 
     def set_message_id(self):
         if self.identifier == 2**16:
             self.identifier = 1
         else:
             self.identifier += 1
+        return
 
     def transfer(self, msg):
         self.last_message = list(msg)
         print([hex(byte) for byte in self.last_message])
-        GPIO.output(23, GPIO.HIGH)
         two_bytes = self.ser.read(2)
         if not two_bytes:
-            print("ERROR: NO DATA RECEIVED")
-        self.ser.write(msg)
-        GPIO.output(23, GPIO.LOW)
+            GPIO.output(23, GPIO.HIGH)
+            self.ser.write(msg)
+            GPIO.output(23, GPIO.LOW)
+        return
 
     def response_handler(self):
         if not self.blocked:
@@ -95,24 +94,21 @@ class ThrustToUARTNode(Node):
 
             print("RECEIVED: ", list(response))
 
-            try {
+            try:
                 received_packet = BasePacket.unpack(response, data_length=len(response) - 4)
                 if received_packet.device_id != 1: 
                     print("ERROR: INVALID DEVICE ID")
                 sent_packet = BasePacket.unpack(self.last_message, data_length=len(self.last_message) - 4)
                 if received_packet.crc != sent_packet.crc:
                     print("ERROR: CRC VALUES DO NOT MATCH")
-            } except {
+            except:
                 print("Unable to unpack received packet")
-            }
 
         return
     
     def format_message(self):
         self.set_message_id()
-        split_identifier = split_bytes(self.identifier)
         message_body = list(self.data)
-
         packet = ThrustPacket(device_id=self.THRUST_ID, message_id=self.identifier, data=self.data, crc=self.compute_crc(message_body))
         return packet.pack()
 
@@ -121,10 +117,10 @@ class ThrustToUARTNode(Node):
         for item in message:    
             message_list.extend([0x00, 0x00, 0x00, item])
         crc = Crc32Mpeg2.calc(message_list)
-        print(hex(crc & 0xFF))
         return crc & 0xFF
 
     def handler(self):
+        print("KeyboardInterrupt recieved: Stopping node...")
         message_body = [self.THRUST_ID, 0, 0] + ([127] * 8)
         packet = ThrustPacket(device_id=self.THRUST_ID, message_id=0, data=([127] * 8), crc=self.compute_crc(message_body))
         self.ser.write(packet.pack())
@@ -138,9 +134,9 @@ def main(args=None):
         rclpy.spin(node)
     except KeyboardInterrupt:
         node.handler()
-
-    node.destroy_node()
-    rclpy.shutdown()
+    finally:
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == "__main__":
     main()

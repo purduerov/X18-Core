@@ -1,6 +1,6 @@
 # X17-Core
 
-Contains all ROS nodes for X-17 that run on Raspberry Pi 4. The Raspberry Pi 4 acts as the intermediary between the laptop on the surface (WiFi network) and the electrical boards on the ROV (hardware connections). Computation does occur on the Raspberry Pi, but it should be limited due to power and heating constraints. This repository contains the code for thrust-related functionality, sensors, tools, and video processing. 
+Contains all ROS nodes for X-17 that run on a Raspberry Pi 4. The Raspberry Pi 4 acts as the intermediary between the laptop on the surface (WiFi network) and the electrical boards on the ROV (hardware connections). Computation does occur on the Raspberry Pi, but it should be limited due to power and heating constraints. This repository contains the code for thrust-related functionality, sensors, tools, and video processing. 
 
 ## General Repository 
 
@@ -30,6 +30,9 @@ The UART protocol used will not have parity bits enabled. It will be running at 
 
 ## ROS2
 
+The Raspberry Pi's for X17-Core use ROS2 Humble. The end of life will be May 2027. Below is a list of ROS2 distributions and their life cycles:
+https://docs.ros.org/en/foxy/Releases.html
+
 ### Setup ROS2 Workspace (where all ROS2 files will be located)
 1. Create a directory using  ```mkdir ros2_ws```
 2. Enter the ```ros2_ws``` using ```cd ros2_ws```
@@ -42,6 +45,8 @@ The UART protocol used will not have parity bits enabled. It will be running at 
 2. Run the command ```source /opt/ros/humble/setup.bash``` (Note ROS2 needs to be installed https://docs.ros.org/en/humble/Installation.html)
 3. Run the command ```colcon build``` (If colcon not installed, run ```sudo apt install python3-colcon-common-extensions```)
 4. Once completed without errors, run ```. install/setup.bash```
+
+If weird errors pop up during ```colcon build```, try deleting the ```build```, ```log```, and ```install``` directories in the ```ros2_ws``` directory and running the command again. Ensure that all files are in included in the ```CMakeLists.txt``` files. See below for more information on ROS2 file structures. 
 
 ### Running code with ROS2
 1. Follow all the steps in Prepare code for execution (Needs to be repeated every time a change is made)
@@ -79,7 +84,9 @@ Example ```ros2_ws``` directory:
 
 Example ```CMakeLists.txt``` install section: 
 
-install(PROGRAMS <br />  src/ROV_main.py <br />  src/packets.py <br />
+install(PROGRAMS <br />  
+  src/ROV_main.py <br />
+  src/packets.py <br />
   src/test_thrust_spi.py <br />
   src/thrust_control.py <br />
   src/thrust_mapping.py <br />
@@ -90,11 +97,16 @@ install(PROGRAMS <br />  src/ROV_main.py <br />  src/packets.py <br />
 
 ## Raspberry Pi
 
+The Raspberry Pi 4 on X17-Core uses the Ubuntu 22.04 LTS 64-bit Server Operating System. To change the OS or systems, flash the SD on the Raspberry Pi.
+
+### Flashing/Reflashing SD Card
+To flash/reflash a Raspberry Pi, you will need a micro SD with at minimum 16 GB. It is recommended to use an SD card with more space (X17 uses 64 GB). You will also require a device that has an SD card reader and has Raspberry Pi imager installed (version should not matter). Here is the link to install the Raspberry Pi imager: https://www.raspberrypi.com/software/. Insert the SD card into the device that write to it (may require an adapter). Choose the desired operating system, the current OS being used is Ubuntu 22.04 LTS 64-bit Server Operating System. You may need to look under ```Other general-purpose OS```. Choose the SD card as the storage device. It will prompt you to for customized settings, or you can click on the settings icon on the main page of the imager. Ensure that the ```Enable SSH``` is selected and that the username and password fields are set. For the ```Configure wireless LAN``` section, put in the name or SSID and password of the WiFi network. For X17, the name is ROS-2, and the password is ```yourmother```. The rest of the settings do not need to be configured unless desired. It may take a few minutes to write, but once done, the SD can be put into the Raspberry Pi SD slot when the Raspberry Pi is turned off. It may take a few minutes for the Raspberry Pi to initialize and connect to the WiFi network. Do not remove the SD card when the Raspberry Pi is operating. 
+
 ### SSH into a Raspberry Pi
 The Raspberry Pi 4 should be turned on, indicated with a red LED by the USB-C power-in. Ensure that both the Raspberry Pi and the device that will be sshing into the Raspberry Pi are connected to the same WiFi network. You will need the IP address of the Raspberry Pi. To view all devices and their IP addresses on the current network, go to 192.168.1.1 in any browser. The username is admin and the password is Yourmother (very funny I know, but it's historial). Once logged into the network settings, go to the attached devices. There should be a list of devices and their IP addresses. To ssh into the Pi, run the command ```ssh pi@IP_ADDRESS```. Enter the password that the Raspberry Pi was given (should be ```pie``` for all). A direct ssh connection can be created through VS Code for an easier coding experience. 
 
 ### Creating an GitHub ssh key for Raspberry Pi
-This is the official guide for creating an ssh key on GitHub:
+For the Raspberry Pi to interact with GitHub repositories, it requires a GitHub ssh key. This is the official guide for creating an ssh key on GitHub:
 https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account
 
-The key will be tied to someone's account, but all of the commands in the guide above will be done on the Raspberry Pi itself.
+The key will be tied to someone's GitHub account, but all of the commands in the guide above will be done on the Raspberry Pi itself.

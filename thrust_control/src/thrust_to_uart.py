@@ -120,10 +120,12 @@ class ThrustToUARTNode(Node):
         return crc & 0xFF
 
     def handler(self):
-        print("KeyboardInterrupt recieved: Stopping node...")
+        print("\nKeyboardInterrupt recieved: Stopping node...")
         message_body = [self.THRUST_ID, 0, 0] + ([127] * 8)
-        packet = ThrustPacket(device_id=self.THRUST_ID, message_id=0, data=([127] * 8), crc=self.compute_crc(message_body))
+        crc_val = self.compute_crc(message_body)
+        packet = ThrustPacket(device_id=self.THRUST_ID, message_id=0, data=([127] * 8), crc=crc_val)
         self.ser.write(packet.pack())
+        print([hex(byte) for byte in (message_body + [crc_val])])
         return
 
 def main(args=None):
@@ -134,9 +136,9 @@ def main(args=None):
         rclpy.spin(node)
     except KeyboardInterrupt:
         node.handler()
-    finally:
-        if rclpy.ok():
-            rclpy.shutdown()
+    
+    if rclpy.ok():
+        rclpy.shutdown()
 
 if __name__ == "__main__":
     main()

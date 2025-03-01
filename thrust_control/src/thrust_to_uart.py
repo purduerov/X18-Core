@@ -24,9 +24,11 @@ class ThrustToUARTNode(Node):
 
         self.THRUST_ID = 0x78
 
+        self.blocked = False
+
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(23, GPIO.OUT, initial=GPIO.LOW)
+        GPIO.setup(18, GPIO.OUT, initial=GPIO.LOW)
 
         self.ser = serial.Serial(
             port = '/dev/serial0',
@@ -62,6 +64,7 @@ class ThrustToUARTNode(Node):
     def thrust_received(self, msg):
         self.data = msg.thrusters
         self.transfer(self.format_message())
+        self.response_handler()
         return
 
     def set_message_id(self):
@@ -75,10 +78,10 @@ class ThrustToUARTNode(Node):
         self.last_message = list(msg)
         print([hex(byte) for byte in self.last_message])
         two_bytes = self.ser.read(2)
-        if not two_bytes:
-            GPIO.output(23, GPIO.HIGH)
+        if not self.ser.in_waiting and not self.blocked:
+            GPIO.output(18, GPIO.HIGH)
             self.ser.write(msg)
-            GPIO.output(23, GPIO.LOW)
+            GPIO.output(18, GPIO.LOW)
         return
 
     def response_handler(self):
@@ -121,6 +124,7 @@ class ThrustToUARTNode(Node):
 
     def handler(self):
         print("\nKeyboardInterrupt recieved: Stopping node...")
+        self.blocked = True
         message_body = [self.THRUST_ID, 0, 0] + ([127] * 8)
         crc_val = self.compute_crc(message_body)
         packet = ThrustPacket(device_id=self.THRUST_ID, message_id=0, data=([127] * 8), crc=crc_val)

@@ -5,6 +5,7 @@ import rclpy
 from rclpy.node import Node
 from crccheck.crc import Crc32Mpeg2
 import serial 
+import wiringpi
 import RPi.GPIO as GPIO
 
 from shared_msgs.msg import FinalThrustMsg
@@ -20,16 +21,19 @@ class ThrustToUARTNode(Node):
 
         logger = self.get_logger().info("UART INITIALIZED")
 
+        # set initial values
         self.identifier = 0
-
         self.THRUST_ID = 0x78
-
         self.blocked = False
 
+        # setup hardware configurations
+        wiringpi.wiringPiSetup()
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(18, GPIO.OUT, initial=GPIO.LOW)
 
+        # open UART serial port 
+        # sudo chmod 666 /dev/serial0
         self.ser = serial.Serial(
             port = '/dev/serial0',
             baudrate = 115200,
@@ -77,10 +81,10 @@ class ThrustToUARTNode(Node):
     def transfer(self, msg):
         self.last_message = list(msg)
         print([hex(byte) for byte in self.last_message])
-        two_bytes = self.ser.read(2)
         if not self.ser.in_waiting and not self.blocked:
             GPIO.output(18, GPIO.HIGH)
             self.ser.write(msg)
+            wiringpi.delayMicroseconds(1000) # self.ser.write(msg) only fills up the buffers, but doesn't wait for msg to second, need a delay before pin is pulled low
             GPIO.output(18, GPIO.LOW)
         return
 
@@ -118,18 +122,20 @@ class ThrustToUARTNode(Node):
     def compute_crc(self, message):
         message_list = []
         for item in message:    
-            message_list.extend([0x00, 0x00, 0x00, item])
+            message_list.extend([0x00, 0x00, 0x00, item]) # processed as 32-bit values on STM, must add padding to create 32-bit number
         crc = Crc32Mpeg2.calc(message_list)
         return crc & 0xFF
 
     def handler(self):
         print("\nKeyboardInterrupt recieved: Stopping node...")
+        # turn off thrusters before quitting
         self.blocked = True
         message_body = [self.THRUST_ID, 0, 0] + ([127] * 8)
         crc_val = self.compute_crc(message_body)
         packet = ThrustPacket(device_id=self.THRUST_ID, message_id=0, data=([127] * 8), crc=crc_val)
         self.ser.write(packet.pack())
         print([hex(byte) for byte in (message_body + [crc_val])])
+        GPIO.cleanup() # remove GPIO configuration
         return
 
 def main(args=None):

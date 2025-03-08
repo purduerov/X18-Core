@@ -32,6 +32,8 @@ class SPITest(Node):
             self.run_all(thrust, interval)
         elif cmd_type == "SEQ":
             self.run_seq(thrust, interval)
+        elif cmd_type == "RAMP":
+            self.run_ramp(interval)
         else:
             print("COMMAND TYPE NOT FOUND: 'FULL' or 'SEQ'")
 
@@ -47,6 +49,30 @@ class SPITest(Node):
         time.sleep(interval)
 
         # zero out thruster
+        thrusters = [127] * 8
+        print(thrusters)
+        tcm.thrusters = bytearray(thrusters)
+        self.thrust_pub.publish(tcm)
+
+    def run_ramp(self, interval):
+        print("RUNNING RAMP")
+        tcm = FinalThrustMsg()
+
+        thrusters = [127] * 8
+        print(thrusters)
+        tcm.thrusters = bytearray(thrusters)
+        self.thrust_pub.publish(tcm)
+        time.sleep(interval)
+
+        thrust_val = 0
+        while thrust_val < 256:
+            thrusters = [thrust_val] * 8
+            print(thrusters)
+            tcm.thrusters = bytearray(thrusters)
+            self.thrust_pub.publish(tcm)
+            time.sleep(interval)
+            thrust_val += 5
+
         thrusters = [127] * 8
         print(thrusters)
         tcm.thrusters = bytearray(thrusters)
@@ -90,3 +116,8 @@ if __name__ == "__main__":
 
 # ros2 topic pub --once /SPI_command shared_msgs/SPITestMsg '{type: "SEQ", thrust: 150, interval: 3}'
 # ros2 topic pub --once /SPI_command shared_msgs/SPITestMsg '{type: "FULL", thrust: 150, interval: 3}'
+# ros2 topic pub --once /SPI_command shared_msgs/SPITestMsg '{type: "RAMP", thrust: 0, interval: 3}'
+
+# SEQ runs each thruster individually at specific thrust for the interval
+# FULL runs all thrusters at specific thrust for the interval
+# RAMP runs all thrusters starting from full back to full forward increasing value at interval

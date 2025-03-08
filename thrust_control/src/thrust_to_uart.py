@@ -129,13 +129,12 @@ class ThrustToUARTNode(Node):
 
     def handler(self):
         print("\nKeyboardInterrupt recieved: Stopping node...")
-        # turn off thrusters before quitting
         self.blocked = True
         message_body = [self.THRUST_ID, 0, 0] + ([127] * 8)
         crc_val = self.compute_crc(message_body)
         packet = ThrustPacket(device_id=self.THRUST_ID, message_id=0, data=([127] * 8), crc=crc_val)
         self.ser.write(packet.pack())
-        print([hex(byte) for byte in (message_body + [crc_val])])
+        print(" ".join(f"{x:02x}" for x in (message_body + [crc_val])))
         GPIO.cleanup() # remove GPIO configuration
         return
 

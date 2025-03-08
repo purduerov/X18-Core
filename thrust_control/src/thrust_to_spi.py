@@ -8,6 +8,7 @@ from crccheck.crc import Crc32Mpeg2
 import RPi.GPIO as GPIO
 
 from shared_msgs.msg import FinalThrustMsg, ToolsMotorMsg
+from utils.heartbeat_helper import HeartbeatHelper
 
 
 def invert_thrust(thrust_value):
@@ -36,6 +37,9 @@ class ThrustToSPINode(Node):
 
     def __init__(self, bus=0, device=1, mode=0, speed=50000, bits_per_word=8):
         super().__init__("thrust_to_spi")
+
+        # Setup heartbeat
+        self.heartbeat_helper = HeartbeatHelper(self, "thrust_to_spi")
 
         # initialize logger
         logger = self.get_logger().info("INITIALIZED")

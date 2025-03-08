@@ -3,7 +3,7 @@ import time
 import rclpy
 from rclpy.node import Node
 
-from shared_msgs.msg import FinalThrustMsg, SPITestMsg
+from shared_msgs.msg import FinalThrustMsg, ThrusterTestMsg
 
 
 class SPITest(Node):
@@ -11,9 +11,9 @@ class SPITest(Node):
         super().__init__("test_thrust_spi")
 
         # initialize publishers and subscriber
-        self.command_publisher = self.create_publisher(SPITestMsg, "SPI_command", 10)
+        self.command_publisher = self.create_publisher(ThrusterTestMsg, "test_thrust", 10)
         self.spi_sub = self.create_subscription(
-            SPITestMsg, "SPI_command", self.callback, 10
+            ThrusterTestMsg, "test_thrust", self.callback, 10
         )
         self.thrust_pub = self.create_publisher(FinalThrustMsg, "final_thrust", 10)
 

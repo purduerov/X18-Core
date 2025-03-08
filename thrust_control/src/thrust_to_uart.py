@@ -36,7 +36,7 @@ class ThrustToUARTNode(Node):
         # sudo chmod 666 /dev/serial0
         self.ser = serial.Serial(
             port = '/dev/serial0',
-            baudrate = 115200,
+            baudrate = 9600,
             timeout=0.1
         )
 
@@ -80,11 +80,12 @@ class ThrustToUARTNode(Node):
 
     def transfer(self, msg):
         self.last_message = list(msg)
-        print([hex(byte) for byte in self.last_message])
         if not self.ser.in_waiting and not self.blocked:
             GPIO.output(18, GPIO.HIGH)
+            print(" ".join(f"{x:02x}" for x in msg))
             self.ser.write(msg)
-            wiringpi.delayMicroseconds(1000) # self.ser.write(msg) only fills up the buffers, but doesn't wait for msg to second, need a delay before pin is pulled low
+            self.ser.flush()
+            wiringpi.delayMicroseconds(12000) # self.ser.write(msg) only fills up the buffers, but doesn't wait for msg to second, need a delay before pin is pulled low
             GPIO.output(18, GPIO.LOW)
         return
 

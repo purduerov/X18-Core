@@ -3,4 +3,4 @@ launch:
       file: $(find-pkg-share thrust_control)/launch/thrust_control_launch.yaml
       # file: $(find-pkg-share sensors)/launch/sensors_launch.yaml
       # file: $(find-pkg-share tools)/launch/tools_launch.yaml
-      file: $(find-pkg-share videos)/launch/videos_launch.yaml
+      # file: $(find-pkg-share videos)/launch/videos_launch.yaml

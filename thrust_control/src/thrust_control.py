@@ -50,7 +50,7 @@ class ThrustControlNode(Node):
         self.tm = ThrustMapper()
 
         # Setup heartbeat
-        self.heartbeat_helper = HeartbeatHelper(self, "thrust_control", 1.0)
+        self.heartbeat_helper = HeartbeatHelper(self)
 
         # initialize publishers
         self.thrust_pub = self.create_publisher(FinalThrustMsg, "final_thrust", 10)

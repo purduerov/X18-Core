@@ -39,7 +39,7 @@ class ThrustToSPINode(Node):
         super().__init__("thrust_to_spi")
 
         # Setup heartbeat
-        self.heartbeat_helper = HeartbeatHelper(self, "thrust_to_spi")
+        self.heartbeat_helper = HeartbeatHelper(self)
 
         # initialize logger
         logger = self.get_logger().info("INITIALIZED")

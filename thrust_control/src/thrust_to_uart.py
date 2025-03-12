@@ -9,6 +9,7 @@ import wiringpi
 import RPi.GPIO as GPIO
 
 from shared_msgs.msg import FinalThrustMsg
+from utils.heartbeat_helper import HeartbeatHelper
 
 def split_bytes(num):
     byte2 = num & 0xFF
@@ -20,6 +21,9 @@ class ThrustToUARTNode(Node):
         super().__init__("thrust_to_uart")
 
         logger = self.get_logger().info("UART INITIALIZED")
+
+        # Heartbeat
+        self.heartbeat_helper = HeartbeatHelper(self)
 
         # set initial values
         self.identifier = 0

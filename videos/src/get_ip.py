@@ -19,6 +19,8 @@ class IpSubscriberNode(Node):
 
     def get_ip(self, msg):
         received_ip = msg.data
+        if received_ip == "STOP":
+            return
 
         try:
             ipaddress.ip_address(received_ip) 
@@ -56,6 +58,11 @@ class IpSubscriberNode(Node):
                 i += 1
 
         self.get_logger().info(f"Discovered devices: {explorehd_devices}")
+        
+        # Handle the case where no devices are found
+        if len(explorehd_devices) == 0:
+            self.get_logger().error("No exploreHD devices found.")
+            return
 
         # Launch nodes with the discovered devices
         i = 1
@@ -65,17 +72,20 @@ class IpSubscriberNode(Node):
                 break
             else:
                 self.get_logger().info(f"Launching node with device: {device}, to camera number: {i}")
-                # Add your node launch logic here
-                # Construct the command with f-strings
-                cmd = ["ros2", "run", "videos", "videos_launch.py", "--ros-args", "-p", f"ip:={ip}", "-p", f"device:={device}", "-p", f"camera_number:={i}"]
-                # Run in a thread
+                cmd = [
+                    "ros2", "run", "videos", "videos_launch.py", "--ros-args",
+                    "-p", f"ip:={ip}",
+                    "-p", f"device:={device}",
+                    "-p", f"camera_number:={i}"
+                ]
                 thread = threading.Thread(target=subprocess.run, args=(cmd,), kwargs={"check": True})
                 thread.start()
                 i += 1
         
 
     def publish_stop(self):
-        msg = "STOP"
+        msg = String()
+        msg.data = "STOP"
 
         self.publisher.publish(msg)
         self.stop_count += 1

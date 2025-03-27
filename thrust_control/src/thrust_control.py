@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 import rclpy
 from rclpy.node import Node
+from utils.heartbeat_helper import HeartbeatHelper
 
 
 from shared_msgs.msg import (
@@ -47,6 +48,9 @@ class ThrustControlNode(Node):
     def __init__(self):
         super().__init__("thrust_control")
         self.tm = ThrustMapper()
+
+        # Setup heartbeat
+        self.heartbeat_helper = HeartbeatHelper(self, "thrust_control", 1.0)
 
         # initialize publishers
         self.thrust_pub = self.create_publisher(FinalThrustMsg, "final_thrust", 10)

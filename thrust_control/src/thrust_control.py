@@ -60,7 +60,7 @@ class ThrustControlNode(Node):
 
         # initialize subscribers
         self.command_sub = self.create_subscription(
-            ThrustCommandMsg, "/thrust_command", self._pilot_command, 10
+            ThrustCommandMsg, "thrust_command", self._pilot_command, 10
         )
         self.com_sub = self.create_subscription(
             ComMsg, "com_tweak", self._com_update, 10

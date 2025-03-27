@@ -23,13 +23,13 @@ class ROVMainNode(Node):
         self.heartbeat_helper = HeartbeatHelper(self)
 
         self.controller_sub = self.create_subscription(
-            RovVelocityCommand, "/rov_velocity", self._controller_input, 10
+            RovVelocityCommand, "rov_velocity", self._controller_input, 10
         )
         self.imu_control_sub = self.create_subscription(
             ImuVelocityCommand, "imu_vel_command", self._imu_input, 10
         )
         self.thrust_command_pub = self.create_publisher(
-            ThrustCommandMsg, "/thrust_command", 10
+            ThrustCommandMsg, "thrust_command", 10
         )
 
         self.timer = self.create_timer(1 / 50.0, self.on_loop)

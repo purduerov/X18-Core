@@ -57,20 +57,20 @@ class ThrustToUARTNode(Node):
 
         return
 
-    # def thrust_map(self, thrusters):
-    #     mapped_thrusters = [127] * 8
-    #     mapped_thrusters[0] = thrusters[6]
-    #     mapped_thrusters[1] = thrusters[2]
-    #     mapped_thrusters[2] = thrusters[5]
-    #     mapped_thrusters[3] = thrusters[1]
-    #     mapped_thrusters[4] = thrusters[7]
-    #     mapped_thrusters[5] = thrusters[3]
-    #     mapped_thrusters[6] = thrusters[0]
-    #     mapped_thrusters[7] = thrusters[4]
-    #     return mapped_thrusters
+    def thrust_map(self, thrusters):
+        mapped_thrusters = [127] * 8
+        mapped_thrusters[0] = thrusters[5]
+        mapped_thrusters[1] = thrusters[1]
+        mapped_thrusters[2] = thrusters[2]
+        mapped_thrusters[3] = thrusters[6]
+        mapped_thrusters[4] = thrusters[4]
+        mapped_thrusters[5] = thrusters[0]
+        mapped_thrusters[6] = thrusters[3]
+        mapped_thrusters[7] = thrusters[7]
+        return mapped_thrusters
 
     def thrust_received(self, msg):
-        self.data = msg.thrusters
+        self.data = self.thrust_map(msg.thrusters)
         self.transfer(self.format_message())
         self.response_handler()
         return

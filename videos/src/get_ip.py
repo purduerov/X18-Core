@@ -15,9 +15,11 @@ class IpSubscriberNode(Node):
         
         self.create_subscription(String, 'surface_ip', self.get_ip, 10)
 
+        self.cameras_launched = False
+
     def get_ip(self, msg):
         received_ip = msg.data
-        if received_ip == "STOP":
+        if self.cameras_launched:
             return
 
         try:

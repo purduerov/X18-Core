@@ -21,6 +21,8 @@ class IpSubscriberNode(Node):
         received_ip = msg.data
         if self.cameras_launched:
             return
+        
+        self.cameras_launched = True
 
         try:
             ipaddress.ip_address(received_ip) 

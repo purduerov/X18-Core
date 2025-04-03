@@ -14,8 +14,6 @@ class IpSubscriberNode(Node):
         super().__init__('ip_subscriber_node')
         
         self.create_subscription(String, 'surface_ip', self.get_ip, 10)
-        # self.launch_camera("192.168.1.23")
-        
 
     def get_ip(self, msg):
         received_ip = msg.data
@@ -24,11 +22,7 @@ class IpSubscriberNode(Node):
 
         try:
             ipaddress.ip_address(received_ip) 
-            
-            self.publisher = self.create_publisher(String, 'surface_ip', 10)
-            self.timer = self.create_timer(1.0, self.publish_stop)
-            self.stop_count = 0
-            self.stop_max_count = 5
+
             self.get_logger().info(f'Received from surface_ip topic: "{msg.data}"')
 
             ## Subprocess command
@@ -81,18 +75,6 @@ class IpSubscriberNode(Node):
                 thread = threading.Thread(target=subprocess.run, args=(cmd,), kwargs={"check": True})
                 thread.start()
                 i += 1
-        
-
-    def publish_stop(self):
-        msg = String()
-        msg.data = "STOP"
-
-        self.publisher.publish(msg)
-        self.stop_count += 1
-        if self.stop_count >= self.stop_max_count:
-            self.get_logger().info(f"Stopping publishing STOP")
-            self.timer.cancel()
-
 
 def main():
     rclpy.init()

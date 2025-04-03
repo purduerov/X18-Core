@@ -19,15 +19,25 @@ class Camera(Node):
         # Define RTSP stream URL 
         rtsp_url = f'rtsp://{ip_address}:8554/camera_{camera_num}'
 
-        while True:
-            subprocess.run(
+        try:
+            # Run ffmpeg with correct argument order
+            process = subprocess.run(
                 [
-                    "ffmpeg", "-f", "v4l2", "-fflags", "nobuffer", 
-                    "-i", dev_name, "-vcodec", "copy", "-g", "10",
-                    "-f", "rtsp", rtsp_url
-                ]
+                    "ffmpeg", 
+                    "-f", "v4l2", 
+                    "-i", dev_name, 
+                    "-fflags", "nobuffer",
+                    "-codec:v", "copy", 
+                    "-g", "10",
+                    "-f", "rtsp", 
+                    rtsp_url
+                ],
+                check=True
             )
-
+            self.get_logger().info(f"Camera {camera_num} stream started")
+        except subprocess.CalledProcessError:
+            self.get_logger().error(f"Failed to start camera {camera_num}. Exiting.")
+            rclpy.shutdown()
 
 
 def main(args=None):

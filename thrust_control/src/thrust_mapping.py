@@ -15,8 +15,8 @@ class ThrustMapper:
             1,
             -1, # 5 TOP
             -1, # 6
-            1, # 7
-            1, # 8
+            -1, # 7
+            -1, # 8
         ]  # -1 inverts direction, 1 keeps the same direction
         self.com = np.array([0.0, 0.0, 0.0]) * SCALE
         # Values for horizontal thrusters

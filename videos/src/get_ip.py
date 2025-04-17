@@ -63,7 +63,7 @@ class IpSubscriberNode(Node):
                     devices_i.append(lines[i].strip())
                     i += 1
                 if len(devices_i) >= 3:
-                    intel_devices.append(devices[4])
+                    intel_devices.append(devices_i[4])
 
         self.get_logger().info(f"Discovered devices: {explorehd_devices}")
         self.get_logger().info(f"Discovered devices: {intel_devices}")

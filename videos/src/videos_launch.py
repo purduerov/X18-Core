@@ -8,7 +8,7 @@ class Camera(Node):
     def __init__(self):
         super().__init__("cameras")
         self.declare_parameter("ip")
-        self.declare_parameter("device", "device=/dev/video0")
+        self.declare_parameter("device", "device=/dev/video4")
         self.declare_parameter("camera_number", 1)
 
         ip_address = self.get_parameter("ip").get_parameter_value().string_value

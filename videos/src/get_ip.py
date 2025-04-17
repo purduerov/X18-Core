@@ -44,14 +44,14 @@ class IpSubscriberNode(Node):
         explorehd_devices = []
         i = 0
         while i < len(lines):
-            if "exploreHD" in lines[i]:
+            if "exploreHD" in lines[i] or "Intel(R)" in lines[i]:
                 devices = []
                 i += 1
                 while i < len(lines) and lines[i].startswith("\t"):
                     devices.append(lines[i].strip())
                     i += 1
                 if len(devices) >= 3:
-                    explorehd_devices.append(devices[2])  # Third device (0-based index)
+                    explorehd_devices.append(devices[0])  # Third device (0-based index)
             else:
                 i += 1
 

@@ -40,7 +40,7 @@ class ThrustToUARTNode(Node):
         # sudo chmod 666 /dev/serial0
         self.ser = serial.Serial(
             port = '/dev/serial0',
-            baudrate = 9600,
+            baudrate = 115200,
             timeout=0.1
         )
 

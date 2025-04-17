@@ -51,7 +51,7 @@ class IpSubscriberNode(Node):
                     devices.append(lines[i].strip())
                     i += 1
                 if len(devices) >= 3:
-                    explorehd_devices.append(devices[3])  # Third device (0-based index)
+                    explorehd_devices.append(devices[4])  # Third device (0-based index)
             else:
                 i += 1
 

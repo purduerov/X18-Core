@@ -53,10 +53,7 @@ class IpSubscriberNode(Node):
                     i += 1
                 if len(devices) >= 3:
                     explorehd_devices.append(devices[2])  # Third device (0-based index)
-            else:
-                i += 1
-
-            if "Intel(R)" in lines[i]:
+            else if "Intel(R)" in lines[i]:
                 devices_i = []
                 i += 1
                 while i < len(lines) and lines[i].startswith("\t"):
@@ -64,6 +61,8 @@ class IpSubscriberNode(Node):
                     i += 1
                 if len(devices_i) >= 3:
                     intel_devices.append(devices_i[4])
+            else:
+                i += 1
 
         self.get_logger().info(f"Discovered devices: {explorehd_devices}")
         self.get_logger().info(f"Discovered devices: {intel_devices}")

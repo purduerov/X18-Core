@@ -68,12 +68,9 @@ class IpSubscriberNode(Node):
         self.get_logger().info(f"Discovered devices: {intel_devices}")
         
         # Handle the case where no devices are found
-        if len(explorehd_devices) == 0:
-            self.get_logger().error("No exploreHD devices found.")
+        if len(explorehd_devices) == 0 and len(intel_devices) == 0:
+            self.get_logger().error("No exploreHD devices or Intel camera found.")
             return
-
-        if len(intel_devices) == 0:
-            self.get_logger().error("NO intel Camera")
         # Launch nodes with the discovered devices
         i = 1
         for device in explorehd_devices:

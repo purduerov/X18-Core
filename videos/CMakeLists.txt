@@ -13,6 +13,7 @@ find_package(rclpy REQUIRED)
 ament_python_install_package(${PROJECT_NAME})
 
 install(PROGRAMS
+  src/intel_launch.py
   src/videos_launch.py
   src/get_ip.py
   DESTINATION lib/${PROJECT_NAME}

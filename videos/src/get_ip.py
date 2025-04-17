@@ -42,26 +42,39 @@ class IpSubscriberNode(Node):
         self.get_logger().info(f"Output of v4l2-ctl --list-devices: {output}")
         lines = output.splitlines()
         explorehd_devices = []
+        intel_devices = []
         i = 0
         while i < len(lines):
-            if "exploreHD" in lines[i] or "Intel(R)" in lines[i]:
+            if "exploreHD" in lines[i]:
                 devices = []
                 i += 1
                 while i < len(lines) and lines[i].startswith("\t"):
                     devices.append(lines[i].strip())
                     i += 1
                 if len(devices) >= 3:
-                    explorehd_devices.append(devices[4])  # Third device (0-based index)
+                    explorehd_devices.append(devices[2])  # Third device (0-based index)
             else:
                 i += 1
 
+            if "Intel(R)" in lines[i]:
+                devices_i = []
+                i += 1
+                while i < len(lines) and lines[i].startswith("\t"):
+                    devices_i.append(lines[i].strip())
+                    i += 1
+                if len(devices) >= 3:
+                    intel_devices.append(devices[4])
+
         self.get_logger().info(f"Discovered devices: {explorehd_devices}")
+        self.get_logger().info(f"Discovered devices: {intel_devices}")
         
         # Handle the case where no devices are found
         if len(explorehd_devices) == 0:
             self.get_logger().error("No exploreHD devices found.")
             return
 
+        if len(intel_devices) == 0:
+            self.get_logger().error("NO intel Camera")
         # Launch nodes with the discovered devices
         i = 1
         for device in explorehd_devices:
@@ -79,6 +92,23 @@ class IpSubscriberNode(Node):
                 thread = threading.Thread(target=subprocess.run, args=(cmd,), kwargs={"check": True})
                 thread.start()
                 i += 1
+        
+        j = 1
+        for device in intel_devices:
+            if j > 1:
+                self.get_logger().info("Device limit reached, not launching more nodes.")
+                break
+            else:
+                self.get_logger().info(f"Launching node with device: {device}, to camera number: {j + i}")
+                cmd = [
+                    "ros2", "run", "videos", "intel_launch.py", "--ros-args",
+                    "-p", f"ip:={ip}",
+                    "-p", f"device:={device}",
+                    "-p", f"camera_number:={j + i}"
+                ]
+                thread = threading.Thread(target=subprocess.run, args=(cmd,), kwargs={"check": True})
+                thread.start()
+                j += 1
 
 def main():
     rclpy.init()

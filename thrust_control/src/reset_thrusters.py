@@ -6,7 +6,8 @@ from rclpy.node import Node
 import signal
 import os, sys
 from utils.heartbeat_helper import HeartbeatHelper
-
+import RPi.GPIO as GPIO
+from time import sleep
 
 
 class ResetThrustersNode(Node):
@@ -19,9 +20,21 @@ class ResetThrustersNode(Node):
         # Initalize subscriber
         self.create_subscription(Bool, 'reset_thrusters', self.reset_thrusters, 10)
 
+        self.get_logger().info("Reset started")
+
 
     def reset_thrusters(self, msg):
         self.get_logger().info(f'Received thruster reset command: {msg.data}')
+        GPIO.output(5, GPIO.LOW)
+        # GPIO.output(6, GPIO.LOW)
+        # GPIO.output(21, GPIO.LOW)
+        sleep(1)
+        GPIO.output(5, GPIO.HIGH)
+        # GPIO.output(6, GPIO.HIGH)
+        # GPIO.output(21, GPIO.HIGH)
+
+
+
 
 
 def main():
@@ -35,6 +48,16 @@ def main():
     # Register the signal handler
     signal.signal(signal.SIGINT, silent_exit)
     signal.signal(signal.SIGTERM, silent_exit)
+
+    GPIO.setwarnings(False)
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(5, GPIO.OUT, initial=GPIO.HIGH)
+    # GPIO.setup(6, GPIO.OUT, initial=GPIO.HIGH)
+    # GPIO.setup(21, GPIO.OUT, initial=GPIO.HIGH)
+
+    GPIO.output(5, GPIO.LOW)
+    sleep(1)
+    GPIO.output(5, GPIO.HIGH)
     
     try:
         rclpy.spin(reset_thrusters_node)

@@ -1,0 +1,9 @@
+launch:
+  - node:
+      pkg: thrust_control
+      exec: reset_thrusters.py
+      namespace: rov
+  - node:
+      pkg: thrust_control
+      exec: thrust_to_uart.py
+      namespace: rov

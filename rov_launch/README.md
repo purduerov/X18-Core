@@ -1,4 +1,4 @@
-# Automated Startup 
+. ./# Automated Startup 
 
 ### Purpose
 On Pi startup the script will automatically run `build.sh` and `run.sh` from the scripts directory in X17-Core repo on the pi to launch the ROS2 nodes. We put it in the system dir in systemd directory. The scripts in this directory run when the Pi starts. We include a sleep time to let some of the needed processes to start and then run the 2 scripts on boot up. We send the output to a file in the X17-Core directory. The following process can be stopped using `scripts/kill-switch.sh`. 

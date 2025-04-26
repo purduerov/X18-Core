@@ -51,13 +51,10 @@ def main():
 
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BCM)
-    GPIO.setup(5, GPIO.OUT, initial=GPIO.HIGH)
+    GPIO.setup(5, GPIO.OUT, initial=GPIO.LOW)
     # GPIO.setup(6, GPIO.OUT, initial=GPIO.HIGH)
     # GPIO.setup(21, GPIO.OUT, initial=GPIO.HIGH)
-
-    # GPIO.output(5, GPIO.LOW)
-    # sleep(1)
-    # GPIO.output(5, GPIO.HIGH)
+    GPIO.output(5, GPIO.HIGH)
     
     try:
         rclpy.spin(reset_thrusters_node)

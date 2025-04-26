@@ -9,14 +9,14 @@ THRUST_MIN = -2.92  # kg f
 class ThrustMapper:
     def __init__(self):
         self.invert_array = [
-            1, # 1 BOTTOM
+            -1, # 1 BOTTOM
             1, # 2
-            1,
-            1,
-            -1, # 5 TOP
+            -1, # 3
+            -1, # 4
+            1, # 5 TOP
             -1, # 6
-            -1, # 7
-            -1, # 8
+            1, # 7
+            1, # 8
         ]  # -1 inverts direction, 1 keeps the same direction
         self.com = np.array([0.0, 0.0, 0.0]) * SCALE
         # Values for horizontal thrusters

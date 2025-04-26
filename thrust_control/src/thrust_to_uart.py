@@ -7,6 +7,7 @@ from crccheck.crc import Crc32Mpeg2
 import serial 
 import wiringpi
 import RPi.GPIO as GPIO
+import struct
 
 from shared_msgs.msg import FinalThrustMsg
 from utils.heartbeat_helper import HeartbeatHelper
@@ -46,6 +47,20 @@ class ThrustToUARTNode(Node):
 
         if not self.ser.is_open:
             self.ser.open()
+
+        # wait to fill buffer in STM
+        fill_buffer_byte = [255]
+        while True:
+            GPIO.output(18, GPIO.HIGH)
+            self.ser.write(struct.pack(">1B", *fill_buffer_byte))
+            self.get_logger().info(str(fill_buffer_byte))
+            self.ser.flush()
+            GPIO.output(18, GPIO.LOW)
+            response = self.ser.read()
+            if response:
+                self.get_logger().info(response)
+                break
+            time.sleep(1)
 
         # Subscribe to final_thrust and start callback function
         self.thrust_sub = self.create_subscription(
@@ -146,8 +161,8 @@ def main(args=None):
     rclpy.init(args=args)
     node = ThrustToUARTNode()
 
-    GPIO.setwarnings(False)
-    GPIO.setmode(GPIO.BCM)
+    # GPIO.setwarnings(False)
+    # GPIO.setmode(GPIO.BCM)
     # GPIO.setup(5, GPIO.OUT, initial=GPIO.HIGH)
 
     # GPIO.output(5, GPIO.LOW)

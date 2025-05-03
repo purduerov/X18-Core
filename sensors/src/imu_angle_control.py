@@ -3,7 +3,6 @@ import time
 
 import rclpy
 from rclpy.node import Node
-
 from shared_msgs.msg import ImuMsg, ImuVelocityCommand
 
 

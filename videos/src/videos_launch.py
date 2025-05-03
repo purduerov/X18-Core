@@ -8,38 +8,36 @@ import subprocess
 class Camera(Node):
     def __init__(self):
         super().__init__("cameras")
-        self.declare_parameter("dev_name", "device=/dev/video2")
-        self.declare_parameter("port_num", "5600")
+        self.declare_parameter("ip")
+        self.declare_parameter("device", "device=/dev/video2")
+        self.declare_parameter("camera_number", 1)
 
-        dev_name = self.get_parameter("dev_name").get_parameter_value().string_value
-        port = self.get_parameter("port_num").get_parameter_value().string_value
+        ip_address = self.get_parameter("ip").get_parameter_value().string_value
+        dev_name = self.get_parameter("device").get_parameter_value().string_value
+        camera_num = self.get_parameter("camera_number").get_parameter_value().integer_value
 
-        while True:
-            subprocess.run(
+        # Define RTSP stream URL 
+        rtsp_url = f'rtsp://{ip_address}:8554/camera_{camera_num}'
+
+        try:
+            # Run ffmpeg with correct argument order
+            process = subprocess.run(
                 [
-                    "gst-launch-1.0",
-                    "-v",
-                    "v4l2src",
-                    dev_name,
-                    "!",
-                    "video/x-h264,width=1920,height=1080",
-                    "!",
-                    "h264parse",
-                    "!",
-                    "queue",
-                    "!",
-                    "rtph264pay",
-                    "config-interval=10",
-                    "pt=96",
-                    "!",
-                    "udpsink",
-                    "host=224.1.1.1",
-                    "auto-multicast=true",
-                    "port=" + port,
-                    "sync=false",
-                    "buffer-size=1048576",
-                ]
+                    "ffmpeg", 
+                    "-f", "v4l2", 
+                    "-i", dev_name, 
+                    "-fflags", "nobuffer",
+                    "-codec:v", "copy", 
+                    "-g", "10",
+                    "-f", "rtsp", 
+                    rtsp_url
+                ],
+                check=True
             )
+            self.get_logger().info(f"Camera {camera_num} stream started")
+        except subprocess.CalledProcessError:
+            self.get_logger().error(f"Failed to start camera {camera_num}. Exiting.")
+            rclpy.shutdown()
 
 
 def main(args=None):

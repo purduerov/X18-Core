@@ -1,8 +1,11 @@
 #! /usr/bin/python3
+
 import rclpy
 from rclpy.node import Node
-
 from std_msgs.msg import Float64
+
+# Library for the depth sensor
+# More info: https://github.com/bluerobotics/ms5837-python
 import ms5837
 
 
@@ -26,9 +29,9 @@ class DepthSense(Node):
         self.sensor.read()  # allows the sensor to read new data     -> maybe need to add this at the begining of each call to pull new data
         msg.data = self.sensor.depth()
 
-        # publishes depth in meters at a rate of 20Hz
+        # publishes depth in meters at a rate of 20Hz (no it doesnt)
         self.publisher_.publish(msg)
-        print(f"Depth: {round(msg.data, 3)} km")
+        self.get_logger().info(f"Depth: {round(msg.data, 3)} km")
 
 
 def main(args=None):

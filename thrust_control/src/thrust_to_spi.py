@@ -5,10 +5,13 @@ from rclpy.node import Node
 from spidev import SpiDev
 from crccheck.crc import Crc32Mpeg2
 
-import RPi.GPIO as GPIO
+# import RPi.GPIO as GPIO
 
 from shared_msgs.msg import FinalThrustMsg, ToolsMotorMsg
 from utils.heartbeat_helper import HeartbeatHelper
+from gpiozero import Device
+from gpiozero.pins.native import NativeFactory
+from gpiozero import OutputDevice
 
 
 def invert_thrust(thrust_value):
@@ -39,7 +42,7 @@ class ThrustToSPINode(Node):
         super().__init__("thrust_to_spi")
 
         # Setup heartbeat
-        self.heartbeat_helper = HeartbeatHelper(self, "thrust_to_spi")
+        self.heartbeat_helper = HeartbeatHelper(self)
 
         # initialize logger
         logger = self.get_logger().info("INITIALIZED")
@@ -56,8 +59,7 @@ class ThrustToSPINode(Node):
         self.pin = 8
 
         # initialize pull-down for chip select
-        GPIO.setwarnings(False)
-        GPIO.setmode(GPIO.BCM)
+        Device.pin_factory = NativeFactory()
 
         # GPIO.setup(24, GPIO.OUT, initial=GPIO.HIGH) # CE0,CE1 is 7,8; PINS 24 and 26
 
@@ -227,10 +229,10 @@ def main(args=None):
     rclpy.init(args=args)
     node = ThrustToSPINode()
 
-    GPIO.setup(22, GPIO.OUT, initial=GPIO.HIGH)
-    GPIO.output(22, GPIO.LOW)
+    reset_pin = OutputDevice(22, active_high=True, initial_value=True)
+    reset_pin.off()
     time.sleep(2)
-    GPIO.output(22, GPIO.HIGH)
+    reset_pin.on()
 
     # run node
     try:
@@ -241,7 +243,6 @@ def main(args=None):
     # cleanup
     node.destroy_node()
     rclpy.shutdown()
-    GPIO.cleanup()
 
 
 if __name__ == "__main__":

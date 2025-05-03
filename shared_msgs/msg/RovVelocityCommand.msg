@@ -3,3 +3,4 @@ uint8 is_fine
 bool is_pool_centric
 bool pitch_lock
 bool depth_lock
+string current_config

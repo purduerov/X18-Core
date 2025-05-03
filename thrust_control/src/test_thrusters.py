@@ -107,16 +107,16 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
 
-    node.destroy_node()
-    rclpy.shutdown()
+    if rclpy.ok():
+        rclpy.shutdown()
 
 
 if __name__ == "__main__":
     main()
 
-# ros2 topic pub --once /SPI_command shared_msgs/SPITestMsg '{type: "SEQ", thrust: 150, interval: 3}'
-# ros2 topic pub --once /SPI_command shared_msgs/SPITestMsg '{type: "FULL", thrust: 150, interval: 3}'
-# ros2 topic pub --once /SPI_command shared_msgs/SPITestMsg '{type: "RAMP", thrust: 0, interval: 3}'
+# ros2 topic pub --once /test_thrust shared_msgs/ThrusterTestMsg '{type: "SEQ", thrust: 150, interval: 3}'
+# ros2 topic pub --once /test_thrust shared_msgs/ThrusterTestMsg '{type: "FULL", thrust: 150, interval: 3}'
+# ros2 topic pub --once /test_thrust shared_msgs/ThrusterTestMsg '{type: "RAMP", thrust: 0, interval: 3}'
 
 # SEQ runs each thruster individually at specific thrust for the interval
 # FULL runs all thrusters at specific thrust for the interval

@@ -1,37 +1,5 @@
 launch:
   - node:
       pkg: "videos"
-      exec: "videos_launch.py"
+      exec: "get_ip.py"
       namespace: "rov"
-      name: "front_cam"
-      param:
-        - name: "dev_name"
-          type: "str"
-          value: "device=/dev/video2"
-        - name: "port_num"
-          type: "str"
-          value: "5600"
-  - node:
-      pkg: "videos"
-      exec: "videos_launch.py"
-      namespace: "rov"
-      name: "down_cam"
-      param:
-        - name: "dev_name"
-          type: "str"
-          value: "device=/dev/video6"
-        - name: "port_num"
-          type: "str"
-          value: "5601"
-  # - node: 
-  #     pkg: "videos"
-  #     exec: "videos_launch.py"
-  #     namespace: "rov"
-  #     name: "aft_cam"
-  #     param:
-  #       - name: "dev_name"
-  #         type: "str"
-  #         value: "device=/dev/video17"
-  #       - name: "port_num"
-  #         type: "str"
-  #         value: "5602"

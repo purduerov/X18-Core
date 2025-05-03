@@ -49,6 +49,7 @@ class ThrustToUARTNode(Node):
             self.ser.open()
 
         # wait to fill buffer in STM
+        """
         fill_buffer_byte = [255]
         while True:
             GPIO.output(18, GPIO.HIGH)
@@ -61,6 +62,7 @@ class ThrustToUARTNode(Node):
                 self.get_logger().info(response)
                 break
             time.sleep(1)
+        """
 
         # Subscribe to final_thrust and start callback function
         self.thrust_sub = self.create_subscription(
@@ -101,10 +103,9 @@ class ThrustToUARTNode(Node):
         self.last_message = list(msg)
         if not self.ser.in_waiting and not self.blocked:
             GPIO.output(18, GPIO.HIGH)
-            print(" ".join(f"{x:02x}" for x in msg))
             self.ser.write(msg)
-            self.ser.flush()
-            wiringpi.delayMicroseconds(12000) # self.ser.write(msg) only fills up the buffers, but doesn't wait for msg to second, need a delay before pin is pulled low
+            #self.ser.flush()
+            wiringpi.delayMicroseconds(950) # self.ser.write(msg) only fills up the buffers, but doesn't wait for msg to second, need a delay before pin is pulled low
             GPIO.output(18, GPIO.LOW)
         return
 
@@ -113,23 +114,23 @@ class ThrustToUARTNode(Node):
             time.sleep(0.001)
 
             # Read available bytes from UART (assuming termination by timeout or known format)
-            response = self.ser.read(self.ser.in_waiting)  # Read all available bytes
+            response = self.ser.read()  # Read all available bytes
 
             if not response:
-                print("ERROR: No response received")
+                # self.get_logger().info("ERROR: No response received")
                 return
 
-            print("RECEIVED: ", list(response))
+            self.get_logger().info("RECEIVED: " + str(list(response)))
 
             try:
                 received_packet = BasePacket.unpack(response, data_length=len(response) - 4)
                 if received_packet.device_id != 1: 
-                    print("ERROR: INVALID DEVICE ID")
+                    self.get_logger().info("ERROR: INVALID DEVICE ID")
                 sent_packet = BasePacket.unpack(self.last_message, data_length=len(self.last_message) - 4)
                 if received_packet.crc != sent_packet.crc:
-                    print("ERROR: CRC VALUES DO NOT MATCH")
+                    self.get_logger().info("ERROR: CRC VALUES DO NOT MATCH")
             except:
-                print("Unable to unpack received packet")
+                self.get_logger().info("Unable to unpack received packet")
 
         return
     
@@ -137,6 +138,7 @@ class ThrustToUARTNode(Node):
         self.set_message_id()
         message_body = list(self.data)
         packet = ThrustPacket(device_id=self.THRUST_ID, message_id=self.identifier, data=self.data, crc=self.compute_crc(message_body))
+        self.get_logger().info(f"Sending: {list(packet.pack())}")
         return packet.pack()
 
     def compute_crc(self, message):
@@ -147,18 +149,19 @@ class ThrustToUARTNode(Node):
         return crc & 0xFF
 
     def handler(self):
-        print("\nKeyboardInterrupt recieved: Stopping node...")
+        self.get_logger().info("\nKeyboardInterrupt recieved: Stopping node...")
         self.blocked = True
         message_body = [self.THRUST_ID, 0, 0] + ([127] * 8)
         crc_val = self.compute_crc(message_body)
         packet = ThrustPacket(device_id=self.THRUST_ID, message_id=0, data=([127] * 8), crc=crc_val)
         self.ser.write(packet.pack())
-        print(" ".join(f"{x:02x}" for x in (message_body + [crc_val])))
+        self.get_logger().info(" ".join(f"{x:02x}" for x in (message_body + [crc_val])))
         GPIO.cleanup() # remove GPIO configuration
         return
 
 def main(args=None):
     rclpy.init(args=args)
+    # time.sleep(10)
     node = ThrustToUARTNode()
 
     # GPIO.setwarnings(False)

@@ -16,9 +16,15 @@ class ResetThrustersNode(Node):
 
         # Setup heartbeat
         self.heartbeat_helper = HeartbeatHelper(self)
+
+        GPIO.setwarnings(False)
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(5, GPIO.OUT, initial=GPIO.HIGH)
+        GPIO.output(5, GPIO.HIGH)
         
         # Initalize subscriber
         self.create_subscription(Bool, 'reset_thrusters', self.reset_thrusters, 10)
+        
 
         self.get_logger().info("Reset started")
 
@@ -49,9 +55,7 @@ def main():
     signal.signal(signal.SIGINT, silent_exit)
     signal.signal(signal.SIGTERM, silent_exit)
 
-    GPIO.setwarnings(False)
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(5, GPIO.OUT, initial=GPIO.HIGH)
+
     # GPIO.setup(6, GPIO.OUT, initial=GPIO.HIGH)
     # GPIO.setup(21, GPIO.OUT, initial=GPIO.HIGH)
 

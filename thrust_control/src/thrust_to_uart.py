@@ -5,12 +5,14 @@ import rclpy
 from rclpy.node import Node
 from crccheck.crc import Crc32Mpeg2
 import serial 
-import wiringpi
-import RPi.GPIO as GPIO
+from serial.rs485 import RS485Settings
+# import wiringpi
+# import RPi.GPIO as GPIO
 import struct
 
 from shared_msgs.msg import FinalThrustMsg
 from utils.heartbeat_helper import HeartbeatHelper
+from gpiozero import OutputDevice
 
 def split_bytes(num):
     byte2 = num & 0xFF
@@ -32,18 +34,16 @@ class ThrustToUARTNode(Node):
         self.blocked = False
 
         # setup hardware configurations
-        wiringpi.wiringPiSetup()
-        GPIO.setwarnings(False)
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(18, GPIO.OUT, initial=GPIO.LOW)
+        self.stm_enable_pin = OutputDevice(18, initial_value=False)
 
         # open UART serial port 
         # sudo chmod 666 /dev/serial0
         self.ser = serial.Serial(
-            port = '/dev/serial0',
+            port = '/dev/ttyAMA0',
             baudrate = 115200,
             timeout=0.1
         )
+        self.ser.rs485_mode = RS485Settings()   # defaults to using RTS for DE
 
         if not self.ser.is_open:
             self.ser.open()
@@ -102,11 +102,9 @@ class ThrustToUARTNode(Node):
     def transfer(self, msg):
         self.last_message = list(msg)
         if not self.ser.in_waiting and not self.blocked:
-            GPIO.output(18, GPIO.HIGH)
+            self.stm_enable_pin.on()
             self.ser.write(msg)
-            #self.ser.flush()
-            wiringpi.delayMicroseconds(950) # self.ser.write(msg) only fills up the buffers, but doesn't wait for msg to second, need a delay before pin is pulled low
-            GPIO.output(18, GPIO.LOW)
+            self.stm_enable_pin.off()
         return
 
     def response_handler(self):
@@ -138,7 +136,7 @@ class ThrustToUARTNode(Node):
         self.set_message_id()
         message_body = list(self.data)
         packet = ThrustPacket(device_id=self.THRUST_ID, message_id=self.identifier, data=self.data, crc=self.compute_crc(message_body))
-        self.get_logger().info(f"Sending: {list(packet.pack())}")
+        self.get_logger().info(f"Sending: {[f'{byte:02x}' for byte in packet.pack()]}")
         return packet.pack()
 
     def compute_crc(self, message):
@@ -156,22 +154,11 @@ class ThrustToUARTNode(Node):
         packet = ThrustPacket(device_id=self.THRUST_ID, message_id=0, data=([127] * 8), crc=crc_val)
         self.ser.write(packet.pack())
         self.get_logger().info(" ".join(f"{x:02x}" for x in (message_body + [crc_val])))
-        GPIO.cleanup() # remove GPIO configuration
         return
 
 def main(args=None):
     rclpy.init(args=args)
-    # time.sleep(10)
     node = ThrustToUARTNode()
-
-    # GPIO.setwarnings(False)
-    # GPIO.setmode(GPIO.BCM)
-    # GPIO.setup(5, GPIO.OUT, initial=GPIO.HIGH)
-
-    # GPIO.output(5, GPIO.LOW)
-    # time.sleep(1)
-    # GPIO.output(5, GPIO.HIGH)
-
 
     try:
         rclpy.spin(node)

@@ -32,7 +32,7 @@ class ROVMainNode(Node):
             ThrustCommandMsg, "thrust_command", 10
         )
 
-        self.timer = self.create_timer(1 / 50.0, self.on_loop)
+        self.timer = self.create_timer(1 / 15.0, self.on_loop)
         self.is_pool_centric = False
 
     def on_loop(self):

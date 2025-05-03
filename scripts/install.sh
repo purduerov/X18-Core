@@ -38,3 +38,6 @@ sudo apt install python3-colcon-common-extensions -y
 # Install python packages
 sudo apt install python3-crccheck -y
 sudo apt install python3-gpiozero -y
+
+# Install ffmpeg for cameras
+sudo apt install ffmpeg -y

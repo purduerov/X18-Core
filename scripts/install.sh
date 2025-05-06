@@ -43,4 +43,4 @@ sudo apt install python3-gpiozero -y
 sudo apt install ffmpeg -y
 
 # Install v4l2
-sudo apt install v4l-utils
+sudo apt install v4l-utils -y

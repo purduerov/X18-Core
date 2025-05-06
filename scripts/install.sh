@@ -41,3 +41,6 @@ sudo apt install python3-gpiozero -y
 
 # Install ffmpeg for cameras
 sudo apt install ffmpeg -y
+
+# Install v4l2
+sudo apt install v4l-utils

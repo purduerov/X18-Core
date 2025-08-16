@@ -1,8 +1,9 @@
 import struct
 
+
 class BasePacket:
     """Base structure for all packets"""
-    
+
     def __init__(self, device_id, message_id, data, crc=0, data_length=8):
         """
         :param device_id: 7-bit unique ID
@@ -23,20 +24,21 @@ class BasePacket:
 
     def pack(self):
         """Converts the object into a fixed-size binary format"""
-        return struct.pack(self.format, self.device_id, self.message_id, *self.data, self.crc)
+        return struct.pack(
+            self.format, self.device_id, self.message_id, *self.data, self.crc
+        )
 
     @classmethod
     def unpack(cls, byte_data, data_length):
         expected_size = struct.calcsize(f"B H {data_length}B H")
 
         unpacked_data = struct.unpack(f"B H {data_length}B H", byte_data)
-        return cls(  
+        return cls(
             device_id=unpacked_data[0] & 0x7F,
             message_id=unpacked_data[1],
-            data=list(unpacked_data[2:data_length + 2]),
-            crc=unpacked_data[data_length + 2]
+            data=list(unpacked_data[2 : data_length + 2]),
+            crc=unpacked_data[data_length + 2],
         )
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}(DeviceID={self.device_id}, MsgID={self.message_id}, Data={self.data}, CRC={self.crc})"
@@ -45,23 +47,27 @@ class BasePacket:
 # Specialized Packets
 class ThrustPacket(BasePacket):
     """Packet for Thrust Data (8 bytes)"""
+
     def __init__(self, device_id, message_id, data, crc=0):
         super().__init__(device_id, message_id, data, crc, data_length=8)
 
 
 class ESCPacket(BasePacket):
     """Packet for ESC Data (8 bytes)"""
+
     def __init__(self, device_id, message_id, data, crc=0):
         super().__init__(device_id, message_id, data, crc, data_length=8)
 
 
 class PowerPacket(BasePacket):
     """Packet for Power Data (8 bytes)"""
+
     def __init__(self, device_id, message_id, data, crc=0):
         super().__init__(device_id, message_id, data, crc, data_length=8)
 
 
 class ToolsPacket(BasePacket):
     """Packet for Tools Data (7 bytes)"""
+
     def __init__(self, device_id, message_id, data, crc=0):
         super().__init__(device_id, message_id, data, crc, data_length=7)

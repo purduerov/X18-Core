@@ -14,25 +14,33 @@ class Camera(Node):
 
         ip_address = self.get_parameter("ip").get_parameter_value().string_value
         dev_name = self.get_parameter("device").get_parameter_value().string_value
-        camera_num = self.get_parameter("camera_number").get_parameter_value().integer_value
+        camera_num = (
+            self.get_parameter("camera_number").get_parameter_value().integer_value
+        )
 
-        # Define RTSP stream URL 
-        rtsp_url = f'rtsp://{ip_address}:8554/camera_{camera_num}'
+        # Define RTSP stream URL
+        rtsp_url = f"rtsp://{ip_address}:8554/camera_{camera_num}"
 
         try:
             # Run ffmpeg with correct argument order
             process = subprocess.run(
                 [
-                    "ffmpeg", 
-                    "-f", "v4l2", 
-                    "-i", dev_name, 
-                    "-fflags", "nobuffer",
-                    "-codec:v", "copy", 
-                    "-g", "10",
-                    "-f", "rtsp", 
-                    rtsp_url
+                    "ffmpeg",
+                    "-f",
+                    "v4l2",
+                    "-i",
+                    dev_name,
+                    "-fflags",
+                    "nobuffer",
+                    "-codec:v",
+                    "copy",
+                    "-g",
+                    "10",
+                    "-f",
+                    "rtsp",
+                    rtsp_url,
                 ],
-                check=True
+                check=True,
             )
             self.get_logger().info(f"Camera {camera_num} stream started")
         except subprocess.CalledProcessError:

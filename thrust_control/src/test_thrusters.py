@@ -11,7 +11,9 @@ class SPITest(Node):
         super().__init__("test_thrust_spi")
 
         # initialize publishers and subscriber
-        self.command_publisher = self.create_publisher(ThrusterTestMsg, "test_thrust", 10)
+        self.command_publisher = self.create_publisher(
+            ThrusterTestMsg, "test_thrust", 10
+        )
         self.spi_sub = self.create_subscription(
             ThrusterTestMsg, "test_thrust", self.callback, 10
         )

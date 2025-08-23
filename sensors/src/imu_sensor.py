@@ -29,11 +29,11 @@ class ImuSensor(Node):
     IMU_YAW_OFFSET = 0.0
 
     def __init__(self):
-        super().__init__('imu_sensor')
+        super().__init__("imu_sensor")
 
         self.imu = BNO055()
         time.sleep(1)
-        self.pub = self.create_publisher(ImuMsg, 'imu', 1)
+        self.pub = self.create_publisher(ImuMsg, "imu", 1)
 
         self.timer = self.create_timer(1 / 20.0, self.loop)
 

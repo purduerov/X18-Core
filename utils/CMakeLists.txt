@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(thrust_control)
+project(utils)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -9,23 +9,16 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(rclpy REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
 
 ament_python_install_package(${PROJECT_NAME})
 
 install(PROGRAMS
-  src/ROV_main.py
-  src/packets.py
-  src/test_thrusters.py
-  src/thrust_control.py
-  src/thrust_mapping.py
-  src/thrust_to_spi.py
-  src/thrust_to_uart.py
-  src/reset_thrusters.py
+  utils/heartbeat_helper.py
   DESTINATION lib/${PROJECT_NAME}
 )
+# uncomment the following section in order to fill in
+# further dependencies manually.
+# find_package(<dependency> REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -38,11 +31,5 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
-
-# Install launch files.
-install(DIRECTORY
-  launch
-  DESTINATION share/${PROJECT_NAME}/
-)
 
 ament_package()

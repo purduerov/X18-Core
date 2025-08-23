@@ -1,0 +1,56 @@
+name: X17-Core Build Test
+on:
+  push:
+    branches:
+      - camera_get_ip
+  pull_request:
+    branches:
+      - camera_get_ip
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04  # Use Ubuntu 22.04 (Jammy) for ROS 2 Humble
+    steps:
+      # Check out the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Set up ROS 2 (Humble)
+      - name: Set up ROS 2
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: humble
+      
+      # Install dependencies from requirements.txt
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+      
+      # Rest of your steps remain the same
+      - name: Build
+        run: |
+          chmod +x scripts/build.sh
+          scripts/build.sh
+      
+      - name: Run
+        run: |
+          chmod +x scripts/run.sh
+          scripts/run.sh
+      
+      - name: Verify nodes
+        run: |
+          source /opt/ros/humble/setup.bash
+          EXPECTED_NODES="/rov/ROV_main /rov/thrust_control /rov/thrust_to_spi"
+          NODE_LIST=$(ros2 node list)
+          for NODE in $EXPECTED_NODES; do
+            if [[ ! "$NODE_LIST" =~ "$NODE" ]]; then
+              echo "ERROR: $NODE node not found"
+              exit 1
+            fi
+          done
+          echo "All nodes successfully launched."
+      
+      - name: Success
+        run: echo "Success!"

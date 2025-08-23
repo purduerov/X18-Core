@@ -3,16 +3,21 @@ import time
 import rclpy
 from rclpy.node import Node
 
-from shared_msgs.msg import FinalThrustMsg, SPITestMsg
+from shared_msgs.msg import FinalThrustMsg, ThrusterTestMsg
+
 
 class SPITest(Node):
     def __init__(self):
-        super().__init__('test_thrust_spi')
+        super().__init__("test_thrust_spi")
 
         # initialize publishers and subscriber
-        self.command_publisher = self.create_publisher(SPITestMsg, 'SPI_command', 10)
-        self.spi_sub = self.create_subscription(SPITestMsg, 'SPI_command', self.callback, 10)
-        self.thrust_pub = self.create_publisher(FinalThrustMsg, 'final_thrust', 10)
+        self.command_publisher = self.create_publisher(
+            ThrusterTestMsg, "test_thrust", 10
+        )
+        self.spi_sub = self.create_subscription(
+            ThrusterTestMsg, "test_thrust", self.callback, 10
+        )
+        self.thrust_pub = self.create_publisher(FinalThrustMsg, "final_thrust", 10)
 
         logger = self.get_logger().info("TEST INITIALIZATION")
 
@@ -29,6 +34,8 @@ class SPITest(Node):
             self.run_all(thrust, interval)
         elif cmd_type == "SEQ":
             self.run_seq(thrust, interval)
+        elif cmd_type == "RAMP":
+            self.run_ramp(interval)
         else:
             print("COMMAND TYPE NOT FOUND: 'FULL' or 'SEQ'")
 
@@ -44,6 +51,30 @@ class SPITest(Node):
         time.sleep(interval)
 
         # zero out thruster
+        thrusters = [127] * 8
+        print(thrusters)
+        tcm.thrusters = bytearray(thrusters)
+        self.thrust_pub.publish(tcm)
+
+    def run_ramp(self, interval):
+        print("RUNNING RAMP")
+        tcm = FinalThrustMsg()
+
+        thrusters = [127] * 8
+        print(thrusters)
+        tcm.thrusters = bytearray(thrusters)
+        self.thrust_pub.publish(tcm)
+        time.sleep(interval)
+
+        thrust_val = 0
+        while thrust_val < 256:
+            thrusters = [thrust_val] * 8
+            print(thrusters)
+            tcm.thrusters = bytearray(thrusters)
+            self.thrust_pub.publish(tcm)
+            time.sleep(interval)
+            thrust_val += 5
+
         thrusters = [127] * 8
         print(thrusters)
         tcm.thrusters = bytearray(thrusters)
@@ -68,6 +99,7 @@ class SPITest(Node):
         tcm.thrusters = bytearray(thrusters)
         self.thrust_pub.publish(tcm)
 
+
 def main(args=None):
     rclpy.init(args=args)
     node = SPITest()
@@ -77,11 +109,17 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
 
-    node.destroy_node()
-    rclpy.shutdown()
+    if rclpy.ok():
+        rclpy.shutdown()
+
 
 if __name__ == "__main__":
     main()
 
-# ros2 topic pub --once /SPI_command shared_msgs/SPITestMsg '{type: "SEQ", thrust: 150, interval: 3}'
-# ros2 topic pub --once /SPI_command shared_msgs/SPITestMsg '{type: "FULL", thrust: 150, interval: 3}'
+# ros2 topic pub --once /test_thrust shared_msgs/ThrusterTestMsg '{type: "SEQ", thrust: 150, interval: 3}'
+# ros2 topic pub --once /test_thrust shared_msgs/ThrusterTestMsg '{type: "FULL", thrust: 150, interval: 3}'
+# ros2 topic pub --once /test_thrust shared_msgs/ThrusterTestMsg '{type: "RAMP", thrust: 0, interval: 3}'
+
+# SEQ runs each thruster individually at specific thrust for the interval
+# FULL runs all thrusters at specific thrust for the interval
+# RAMP runs all thrusters starting from full back to full forward increasing value at interval

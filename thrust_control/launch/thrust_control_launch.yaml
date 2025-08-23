@@ -1,13 +1,17 @@
 launch:
-  nodes:
-    - pkg: "thrust_control"
+  - node:
+      pkg: "thrust_control"
       exec: "ROV_main.py"
       namespace: "rov"
-
-    - pkg: "thrust_control"
+  - node:
+      pkg: "thrust_control"
       exec: "thrust_control.py"
       namespace: "rov"
-      
-    - pkg: "thrust_control"
-      exec: "thrust_to_spi.py"
+  - node:
+      pkg: "thrust_control"
+      exec: "thrust_to_uart.py"
+      namespace: "rov"
+  - node:
+      pkg: "thrust_control"
+      exec: "reset_thrusters.py"
       namespace: "rov"

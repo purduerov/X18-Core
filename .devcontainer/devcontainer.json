@@ -20,8 +20,8 @@
         "source=${localWorkspaceFolder}/,target=/workspace,type=bind"
     ],
     "runArgs": [
-        "--network", "host"     // Use host network
+
+        "--network", "bridge"     // Use host network
     ],
     "remoteUser": "root",
-    "postCreateCommand": "echo 'source /opt/ros/humble/setup.bash' >> /root/.bashrc"
 }

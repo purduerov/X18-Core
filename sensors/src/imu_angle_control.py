@@ -3,7 +3,6 @@ import time
 
 import rclpy
 from rclpy.node import Node
-
 from shared_msgs.msg import ImuMsg, ImuVelocityCommand
 
 
@@ -13,10 +12,10 @@ class ImuAngleControlNode(Node):
     kd = [0.0, 0.0, 0.0]
 
     def __init__(self):
-        super().__init__('imu_angle_control')
+        super().__init__("imu_angle_control")
 
-        self.sub = self.create_subscription(ImuMsg, 'imu', self.imu_reading, 1)
-        self.pub = self.create_publisher(ImuVelocityCommand, 'imu_vel_command', 10)
+        self.sub = self.create_subscription(ImuMsg, "imu", self.imu_reading, 1)
+        self.pub = self.create_publisher(ImuVelocityCommand, "imu_vel_command", 10)
 
         self.prev_error = [0.0, 0.0, 0.0]  # Tuple of [pitch, roll, yaw]
         self.prev_ts = time.time()

@@ -24,4 +24,5 @@
         "--network", "bridge"     // Use host network
     ],
     "remoteUser": "root",
+    "postCreateCommand": "echo 'source /opt/ros/jazzy/setup.bash' >> /root/.bashrc && echo 'export ROS_DOMAIN_ID=69' >> /root/.bashrc"
 }

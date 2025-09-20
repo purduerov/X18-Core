@@ -1,7 +1,5 @@
-# Specify base image
-FROM ros:humble
-ARG DEBIAN_FRONTEND=noninteractive
+FROM ros:jazzy
 
-# Install system dependencies
-RUN apt-get -y update
-RUN apt-get -y install python3-pip
+RUN apt-get update && apt-get dist-upgrade -y && \
+    apt-get install -y python3-pip && \
+    rm -rf /var/lib/apt/lists/*

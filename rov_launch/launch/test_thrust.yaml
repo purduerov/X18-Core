@@ -5,5 +5,5 @@ launch:
       namespace: rov
   - node:
       pkg: thrust_control
-      exec: thrust_to_uart.py
+      exec: thrust_to_spi.py
       namespace: rov

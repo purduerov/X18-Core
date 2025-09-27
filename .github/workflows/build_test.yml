@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04  # Use Ubuntu 22.04 (Jammy) for ROS 2 Humble
+    runs-on: ubuntu-24.04  # Use Ubuntu 24.04 (Noble Numbat) for ROS 2 Jazzy Jalisco
     steps:
       # Check out the repository
       - name: Checkout code
@@ -18,9 +18,9 @@ jobs:
       
       # Set up ROS 2 (Humble)
       - name: Set up ROS 2
-        uses: ros-tooling/setup-ros@v0.7
+        uses: ros-tooling/setup-ros@v0.7 # interfaces with github actions (maybe?)
         with:
-          required-ros-distributions: humble
+          required-ros-distributions: jazzy # updated to use Jazzy, also matches the dockerfile now
       
       # Install dependencies from requirements.txt
       - name: Install dependencies
@@ -39,9 +39,9 @@ jobs:
           chmod +x scripts/run.sh
           scripts/run.sh
       
-      - name: Verify nodes
+      - name: Verify nodes # updated to use jazzy
         run: |
-          source /opt/ros/humble/setup.bash
+          source /opt/ros/jazzy/setup.bash 
           EXPECTED_NODES="/rov/ROV_main /rov/thrust_control /rov/thrust_to_spi"
           NODE_LIST=$(ros2 node list)
           for NODE in $EXPECTED_NODES; do

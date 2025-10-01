@@ -27,6 +27,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip
+          pip install crccheck gpiozero
       
       # Rest of your steps remain the same
       - name: Build

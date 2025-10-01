@@ -18,7 +18,7 @@ jobs:
       
       # Set up ROS 2 (jazzy)
       - name: Set up ROS 2
-        uses: ros-tooling/setup-ros@v0.7.15 # gets version from repo
+        uses: ros-tooling/setup-ros@v0.7 # gets version from repo
         with:
           required-ros-distributions: jazzy # updated to use Jazzy, also matches the dockerfile now
       

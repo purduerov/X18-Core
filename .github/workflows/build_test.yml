@@ -1,11 +1,11 @@
-name: X18-Core Build Test
+name: X17-Core Build Test
 on:
   push:
     branches:
-      - camera_get_ip # only run on pushes to the camera_get_ip branch ?
+      - camera_get_ip
   pull_request:
     branches:
-      - camera_get_ip # only run on pushes to the camera_get_ip branch ?
+      - camera_get_ip
   workflow_dispatch:
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      # Set up ROS 2 (jazzy)
+      # Set up ROS 2 (Humble)
       - name: Set up ROS 2
         uses: ros-tooling/setup-ros@v0.7 # interfaces with github actions (maybe?)
         with:

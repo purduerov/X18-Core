@@ -3,15 +3,19 @@ launch:
       pkg: "thrust_control"
       exec: "ROV_main.py"
       namespace: "rov"
+      if: false
   - node:
       pkg: "thrust_control"
       exec: "thrust_control.py"
       namespace: "rov"
+      if: false
   - node:
       pkg: "thrust_control"
       exec: "thrust_to_uart.py"
       namespace: "rov"
+      if: false
   - node:
       pkg: "thrust_control"
       exec: "reset_thrusters.py"
       namespace: "rov"
+      if: false

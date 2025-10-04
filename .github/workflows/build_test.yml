@@ -27,6 +27,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip
+          pip install gpiozero[test]         
           pip install crccheck gpiozero mock pytest-mock
       
       # Rest of your steps remain the same

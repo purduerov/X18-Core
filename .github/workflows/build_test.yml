@@ -41,7 +41,7 @@ jobs:
           GPIOZERO_PIN_FACTORY: mock
         run: |
           chmod +x scripts/run.sh
-          scripts/run.sh
+          timeout --kill-after=10s 5m ./scripts/run.sh
       
       - name: Verify nodes # updated to use jazzy
         run: |

@@ -48,7 +48,7 @@ jobs:
       - name: Verify nodes # updated to use jazzy
         run: |
           source /opt/ros/jazzy/setup.bash 
-          EXPECTED_NODES="/rov/ROV_main /rov/pi_temp"
+          EXPECTED_NODES="/rov/get_ip.py"
           NODE_LIST=$(ros2 node list)
           for NODE in $EXPECTED_NODES; do
             if [[ ! "$NODE_LIST" =~ "$NODE" ]]; then

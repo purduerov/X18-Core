@@ -15,3 +15,7 @@ launch:
       pkg: "thrust_control"
       exec: "reset_thrusters.py"
       namespace: "rov"
+  - node:
+      pkg: "thrust_control"
+      exec: "DummyPublisher_Arun.py"
+      namespace: "rov"

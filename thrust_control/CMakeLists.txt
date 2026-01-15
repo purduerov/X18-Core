@@ -24,6 +24,7 @@ install(PROGRAMS
   src/thrust_to_spi.py
   src/thrust_to_uart.py
   src/reset_thrusters.py
+  src/DummyPublisher_Arun.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

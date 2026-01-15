@@ -31,6 +31,16 @@ class ROVMainNode(Node):
         self.thrust_command_pub = self.create_publisher(
             ThrustCommandMsg, "thrust_command", 10
         )
+        
+        self.controller_percent_power[0] = 1
+        self.controller_percent_power[1] = 1
+        self.controller_percent_power[2] = 1
+        self.controller_percent_power[3] = 1
+        self.controller_percent_power[4] = 1
+        self.controller_percent_power[5] = 1
+        self.mode_fine = 1
+        self.is_pool_centric = True
+        print("TESTTING")
 
         self.timer = self.create_timer(1 / 15.0, self.on_loop)
         self.is_pool_centric = False
@@ -66,7 +76,7 @@ class ROVMainNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = ROVMainNode()
-
+    print("We're so done")
     rclpy.spin(node)
 
     node.destroy_node()

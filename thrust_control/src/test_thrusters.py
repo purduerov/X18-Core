@@ -23,7 +23,7 @@ class SPITest(Node):
 
     def callback(self, msg):
         # print("CALLBACK")
-
+        self.get_logger().info("Test running")
         # initialize message variables
         cmd_type = msg.type
         thrust = msg.thrust

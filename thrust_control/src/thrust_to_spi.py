@@ -12,7 +12,7 @@ from utils.heartbeat_helper import HeartbeatHelper
 
 class ThrustToSPINode(Node):
     # initialize Class Variables
-    ZERO_THRUST = [127, 127, 127, 127, 127, 127, 127, 127]  # 127 is neutral
+    ZERO_THRUST = [127, 127, 127, 127, 127, 127]  # 127 is neutral
     ZERO_TOOLS = [127, 127, 127, 127]  # WHAT IS THE NEUTRAL VALUE???
     FULL_THRUST_CONTROL = 2
     TOOLS_SERVO_CONTROL = 3
@@ -30,8 +30,14 @@ class ThrustToSPINode(Node):
         self.thrusters = self.ZERO_THRUST
         self.tools = self.ZERO_TOOLS
 
+<<<<<<< HEAD
         self.handle = lg.spi_open(device, channel, baud, flags)
         self.id = 0
+=======
+        self.spi_handle = lg.spi_open(device, channel, baud, flags)
+        self.id = 0
+        self.data = 6 * [0]
+>>>>>>> cfbe5a8 (Innovative CRC working)
 
         self.thrust_sub = self.create_subscription(
             FinalThrustMsg,  # message, updated 50 times per second regardless of change
@@ -64,14 +70,14 @@ class ThrustToSPINode(Node):
 
     # thrust callback function
     def thrust_received(self, msg):
-        print("THRUSTER RECEIVED")
+        self.get_logger().info(f"THRUST RECEIVED: {[hex(n) for n in self.data]}")
         self.data = self.thrust_map(msg.thrusters)
         self.type = self.FULL_THRUST_CONTROL
         self.message_received()
         return
 
     def tools_received(self, msg):
-        print("TOOLS RECEVIED")
+        self.get_logger().info("TOLLDS")
         self.data = list(msg.tools)
         self.data += [0, 0, 0, 0]
         self.type = self.TOOLS_SERVO_CONTROL
@@ -81,11 +87,11 @@ class ThrustToSPINode(Node):
     # process a received message from subscription
     def message_received(self):
         if not self.blocked:
-            self.set_message_id()
-            self.transfer(self.format_message())
-            self.response_handler()
+            self.transfer(self.format_message(self.data, 0xf))
+            #self.response_handler()
         return
 
+<<<<<<< HEAD
     # sets id to an incremented 2-byte number
     def set_message_id(self):
         if self.identifier == 65535:
@@ -94,27 +100,42 @@ class ThrustToSPINode(Node):
             self.identifier += 1
         return
 
+=======
+>>>>>>> cfbe5a8 (Innovative CRC working)
     # prepares input and calls the Crc32Mpeg2 CRC function
     def compute_crc(self, message):
-        message_list = []
-        for item in message:
-            message_list.extend([0x00, 0x00, 0x00, item])
-        self.crc = Crc32Mpeg2.calc(message_list)
+        crc_int =int(Crc32Mpeg2.calc(message))
+        self.crc = crc_int.to_bytes(4)
         return
 
     def transfer(self, data):
+<<<<<<< HEAD
         rx_buf = lg.spi_xfer(self.handle, data) #(count, rx_data)
         
+=======
+        (count, rx_buf) = lg.spi_xfer(self.spi_handle, data) #(count, rx_data)
+>>>>>>> cfbe5a8 (Innovative CRC working)
         if self.id == 15:
             self.id = 0
         else:
             self.id += 1
+<<<<<<< HEAD
         
+=======
+        self.get_logger().info(f"RECEIVED DATA {[hex(n) for n in list(rx_buf)]}") 
+>>>>>>> cfbe5a8 (Innovative CRC working)
         return rx_buf #maybe return just the seconnd part of the tuple
 
     def format_message(self, data, msgType):
         message = [msgType + (self.id << 4)] + list(data)
+<<<<<<< HEAD
         return bytearray(message)
+=======
+        self.compute_crc(message)
+        message = bytearray(message)
+        message += self.crc
+        return message
+>>>>>>> cfbe5a8 (Innovative CRC working)
     
 
     # sends data to allow slave response
@@ -164,11 +185,15 @@ class ThrustToSPINode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = ThrustToSPINode()
+    node = ThrustToSPINode(0, 0, 10000, 0)
 
     try:
         rclpy.spin(node)
+<<<<<<< HEAD
     except KeyboardInterrupt
+=======
+    except KeyboardInterrupt:
+>>>>>>> cfbe5a8 (Innovative CRC working)
         node.handler
    
    

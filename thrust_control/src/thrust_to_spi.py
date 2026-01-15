@@ -30,14 +30,9 @@ class ThrustToSPINode(Node):
         self.thrusters = self.ZERO_THRUST
         self.tools = self.ZERO_TOOLS
 
-<<<<<<< HEAD
-        self.handle = lg.spi_open(device, channel, baud, flags)
-        self.id = 0
-=======
         self.spi_handle = lg.spi_open(device, channel, baud, flags)
         self.id = 0
         self.data = 6 * [0]
->>>>>>> cfbe5a8 (Innovative CRC working)
 
         self.thrust_sub = self.create_subscription(
             FinalThrustMsg,  # message, updated 50 times per second regardless of change
@@ -91,17 +86,6 @@ class ThrustToSPINode(Node):
             #self.response_handler()
         return
 
-<<<<<<< HEAD
-    # sets id to an incremented 2-byte number
-    def set_message_id(self):
-        if self.identifier == 65535:
-            self.identifier = 0
-        else:
-            self.identifier += 1
-        return
-
-=======
->>>>>>> cfbe5a8 (Innovative CRC working)
     # prepares input and calls the Crc32Mpeg2 CRC function
     def compute_crc(self, message):
         crc_int =int(Crc32Mpeg2.calc(message))
@@ -109,33 +93,20 @@ class ThrustToSPINode(Node):
         return
 
     def transfer(self, data):
-<<<<<<< HEAD
-        rx_buf = lg.spi_xfer(self.handle, data) #(count, rx_data)
-        
-=======
         (count, rx_buf) = lg.spi_xfer(self.spi_handle, data) #(count, rx_data)
->>>>>>> cfbe5a8 (Innovative CRC working)
         if self.id == 15:
             self.id = 0
         else:
             self.id += 1
-<<<<<<< HEAD
-        
-=======
         self.get_logger().info(f"RECEIVED DATA {[hex(n) for n in list(rx_buf)]}") 
->>>>>>> cfbe5a8 (Innovative CRC working)
         return rx_buf #maybe return just the seconnd part of the tuple
 
     def format_message(self, data, msgType):
         message = [msgType + (self.id << 4)] + list(data)
-<<<<<<< HEAD
-        return bytearray(message)
-=======
         self.compute_crc(message)
         message = bytearray(message)
         message += self.crc
         return message
->>>>>>> cfbe5a8 (Innovative CRC working)
     
 
     # sends data to allow slave response
@@ -189,11 +160,7 @@ def main(args=None):
 
     try:
         rclpy.spin(node)
-<<<<<<< HEAD
-    except KeyboardInterrupt
-=======
     except KeyboardInterrupt:
->>>>>>> cfbe5a8 (Innovative CRC working)
         node.handler
    
    

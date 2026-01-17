@@ -19,7 +19,7 @@ class ThrustToSPINode(Node):
     identifier = 0
     blocked = False
     
-    def __init__(self, device, channel, baud, flags):
+    def __init__(self, device, channels : tuple, baud, flags):
         super().__init__("thrust_to_spi")
         # Setup heartbeat
         self.heartbeat_helper = HeartbeatHelper(self)
@@ -30,9 +30,11 @@ class ThrustToSPINode(Node):
         self.thrusters = self.ZERO_THRUST
         self.tools = self.ZERO_TOOLS
 
-        self.spi_handle = lg.spi_open(device, channel, baud, flags)
+        self.thrust_handle = lg.spi_open(device, channels[0], baud, flags)
+        self.power_handle = lg.spi_open(device, channels[1], baud, flags)
         self.id = 0
         self.data = 6 * [0]
+        self.blocked = False
 
         self.thrust_sub = self.create_subscription(
             FinalThrustMsg,  # message, updated 50 times per second regardless of change
@@ -65,14 +67,14 @@ class ThrustToSPINode(Node):
 
     # thrust callback function
     def thrust_received(self, msg):
-        self.get_logger().info(f"THRUST RECEIVED: {[hex(n) for n in self.data]}")
+        self.get_logger().info(f"THRUST SENT: {[hex(n) for n in self.data]}")
         self.data = self.thrust_map(msg.thrusters)
         self.type = self.FULL_THRUST_CONTROL
         self.message_received()
         return
 
     def tools_received(self, msg):
-        self.get_logger().info("TOLLDS")
+        self.get_logger().info("TOOLS")
         self.data = list(msg.tools)
         self.data += [0, 0, 0, 0]
         self.type = self.TOOLS_SERVO_CONTROL
@@ -82,8 +84,10 @@ class ThrustToSPINode(Node):
     # process a received message from subscription
     def message_received(self):
         if not self.blocked:
-            self.transfer(self.format_message(self.data, 0xf))
-            #self.response_handler()
+            self.blocked = True
+            received_mesage = self.transfer(self.format_message(self.data, 0xf))
+            self.blocked = False
+            self.response_handler(received_mesage)
         return
 
     # prepares input and calls the Crc32Mpeg2 CRC function
@@ -93,13 +97,13 @@ class ThrustToSPINode(Node):
         return
 
     def transfer(self, data):
-        (count, rx_buf) = lg.spi_xfer(self.spi_handle, data) #(count, rx_data)
-        if self.id == 15:
-            self.id = 0
+        (count, rx_buf) = lg.spi_xfer(self.thrust_handle, data) #(count, rx_data)
+        if self.id == 0xF:
+            self.id = 0x0
         else:
             self.id += 1
         self.get_logger().info(f"RECEIVED DATA {[hex(n) for n in list(rx_buf)]}") 
-        return rx_buf #maybe return just the seconnd part of the tuple
+        return rx_buf #maybe return just the second part of the tuple
 
     def format_message(self, data, msgType):
         message = [msgType + (self.id << 4)] + list(data)
@@ -110,66 +114,42 @@ class ThrustToSPINode(Node):
     
 
     # sends data to allow slave response
-    def response_handler(self):
-        if not self.blocked:
-            time.sleep(0.0001)
-            message = [0] * len(self.last_message)
-            # GPIO.output(self.pin, GPIO.LOW)
-            response = list(self.spi.xfer3(message))
-            if (
-                response[-2] != self.last_message[-2]
-                or response[-1] != self.last_message[-1]
-            ):
-                print("ERROR: CRC VALUES DO NOT MATCH")
-            # GPIO.output(self.pin, GPIO.HIGH)
-            print("SLAVE: ", response)
+    def response_handler(self, response : bytearray):
+        response_data = response[:-4]
+        response_crc = int.from_bytes(response[-4:], byteorder="big")
 
-        return
+        calc_crc = Crc32Mpeg2.calc(response_data)
+       
+        if(calc_crc != response_crc):
+            return
+        else:
+            msg_id = (response_data[0] >> 4) & 0x0F
+            msg_type = response_data[0] & 0x0F
+            response_data = response_data[1:]
 
-    # error and interrupt handler NEED TO UPDATE
+    
+
     def handler(self):
-        print("trl-C detected")
+        print("Ctrl-C detected")
         self.blocked = True
 
-        kill = [self.FULL_THRUST_CONTROL] + [0, 0] + self.ZERO_THRUST
-        print(kill)
-        self.compute_crc(kill)
-        split_crc = swap_bytes(split_bytes(self.crc))
-        kill += split_crc
-        self.spi.xfer3(bytearray(kill))
+        kill_msg = self.format_message(6 * [0], 0x0)
+        self.transfer(kill_msg)
 
-        print("THRUST MASTER: ", list(kill))
-
-        message = [self.TOOLS_SERVO_CONTROL] + [0, 0] + self.ZERO_TOOLS
-        print(message)
-        self.compute_crc(message)
-        split_crc = swap_bytes(split_bytes(self.crc))
-        message += split_crc
-        self.spi.xfer3(bytearray(message))
-
-        print("TOOLS MASTER: ", list(message))
-
-        self.spi.close()
-        # GPIO.cleanup()
+        lg.spi_close(self.thrust_handle)
+        lg.spi_close(self.power_handle)
         print("Closed")
         exit(1)
 
 def main(args=None):
     rclpy.init(args=args)
-    node = ThrustToSPINode(0, 0, 10000, 0)
+    node = ThrustToSPINode(0, (0, 1), 10000, 0)
 
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
         node.handler
    
-   
-    # spiDevice = spiWork(0, 0, 10000, 0)
-    # thrustValues = [0x11, 0x22, 0x33, 0x44, 0x55, 0x66]
-    # formattedMessage = spiDevice.format_message(thrustValues, 0x1)
-    # print(list(formattedMessage))
-    # actualData = spiDevice.transfer(formattedMessage)
-    # print(actualData)
 
 if __name__ == "__main__":
     main()

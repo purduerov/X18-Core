@@ -15,6 +15,18 @@ class FinalThrustPublisher(Node):
             10
         )
 
+        self.sub = self.create_subscription(
+            FinalThrustMsg,
+            'thrust_response',
+            sub_callback,
+            10
+        )
+
+    def sub_callback(self, msg):
+        print(f"Response message from thrust_to_spi {msg}")
+
+
+
 
 def main(args=None):
     rclpy.init(args=args)

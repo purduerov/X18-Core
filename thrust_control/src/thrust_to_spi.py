@@ -43,6 +43,12 @@ class ThrustToSPINode(Node):
             10,
         )
 
+        self.thrust_response_pub = self.create_publisher(
+            FinalThrustMsg,
+            "thrust_response",
+            10
+        )
+
         #EDIT LATER
         # self.tools_sub = self.create_subscription(
         #     ToolsMotorMsg, "/tools_motor", self.tools_received, 10
@@ -126,6 +132,7 @@ class ThrustToSPINode(Node):
             msg_id = (response_data[0] >> 4) & 0x0F
             msg_type = response_data[0] & 0x0F
             response_data = response_data[1:]
+            
 
     
 

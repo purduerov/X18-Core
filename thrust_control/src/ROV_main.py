@@ -31,6 +31,13 @@ class ROVMainNode(Node):
         self.thrust_command_pub = self.create_publisher(
             ThrustCommandMsg, "thrust_command", 10
         )
+
+        self.thrust_sub = self.create_subscription(
+            FinalThrustMsg,
+            'thrust_response',
+            self.thrust_response_callback,
+            10
+        )
         
         self.controller_percent_power[0] = 1
         self.controller_percent_power[1] = 1
@@ -71,6 +78,12 @@ class ROVMainNode(Node):
 
     def _imu_input(self, msg):
         self.imu_velocity = msg.angular
+
+    def thrust_response_callback(self):
+        # EDIT LATER
+        # fill in once we know how surface will work
+        return
+        
 
 
 def main(args=None):

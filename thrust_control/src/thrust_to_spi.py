@@ -31,9 +31,10 @@ class ThrustToSPINode(Node):
         self.tools = self.ZERO_TOOLS
 
         self.thrust_handle = lg.spi_open(device, channels[0], baud, flags)
-        self.power_handle = lg.spi_open(device, channels[1], baud, flags)
+        self.tools_handle = lg.spi_open(device, channels[1], baud, flags)
         self.id = 0
-        self.data = 6 * [0]
+        self.thrust_data = 6 * [0]
+        self.tools_data = 6 * [0]
         self.blocked = False
 
         self.thrust_sub = self.create_subscription(
@@ -45,14 +46,13 @@ class ThrustToSPINode(Node):
 
         self.thrust_response_pub = self.create_publisher(
             FinalThrustMsg,
-            "thrust_response",
+            'thrust_response',
             10
         )
-
-        #EDIT LATER
-        # self.tools_sub = self.create_subscription(
-        #     ToolsMotorMsg, "/tools_motor", self.tools_received, 10
-        # )
+    
+        self.tools_sub = self.create_subscription(
+            ToolsMotorMsg, 'tools_motor', self.tools_received, 10
+        )
 
         return
 
@@ -69,29 +69,38 @@ class ThrustToSPINode(Node):
         mapped_thrusters[5] = thrusters[5]
 
         return mapped_thrusters
+    
+    def tool_map(self, tools):
+        mapped_tools = [127] * 6
+
+        mapped_tools[0] = tools[0]
+        mapped_tools[1] = tools[1]
+        mapped_tools[2] = tools[2]
+        mapped_tools[3] = tools[3]
+        mapped_tools[4] = tools[4]
+        mapped_tools[5] = tools[5]
+
+        return mapped_tools
 
 
     # thrust callback function
     def thrust_received(self, msg):
-        self.get_logger().info(f"THRUST SENT: {[hex(n) for n in self.data]}")
-        self.data = self.thrust_map(msg.thrusters)
-        self.type = self.FULL_THRUST_CONTROL
-        self.message_received()
+        self.get_logger().info(f"THRUST SENT: {[hex(n) for n in self.thrust_data]}")
+        self.thrust_data = self.thrust_map(msg.thrusters)
+        self.message_received(self.thrust_data, 0xf, self.thrust_handle)
         return
 
     def tools_received(self, msg):
-        self.get_logger().info("TOOLS")
-        self.data = list(msg.tools)
-        self.data += [0, 0, 0, 0]
-        self.type = self.TOOLS_SERVO_CONTROL
-        self.message_received()
+        self.get_logger().info(f"TOOLS SENT: {[hex(n) for n in self.tools_data]}")
+        self.tools_data = self.tool_map(msg.tools)
+        self.message_received(self.tools_data, 0xf, self.tools_handle)
         return
 
     # process a received message from subscription
-    def message_received(self):
+    def message_received(self, data, msgType, handle):
         if not self.blocked:
             self.blocked = True
-            received_mesage = self.transfer(self.format_message(self.data, 0xf))
+            received_mesage = self.transfer(self.format_message(data, msgType), handle)
             self.blocked = False
             self.response_handler(received_mesage)
         return
@@ -102,7 +111,7 @@ class ThrustToSPINode(Node):
         self.crc = crc_int.to_bytes(4)
         return
 
-    def transfer(self, data):
+    def transfer(self, data, handle):
         (count, rx_buf) = lg.spi_xfer(self.thrust_handle, data) #(count, rx_data)
         if self.id == 0xF:
             self.id = 0x0
@@ -127,11 +136,15 @@ class ThrustToSPINode(Node):
         calc_crc = Crc32Mpeg2.calc(response_data)
        
         if(calc_crc != response_crc):
+            print('WRONG CRC')
             return
         else:
             msg_id = (response_data[0] >> 4) & 0x0F
             msg_type = response_data[0] & 0x0F
             response_data = response_data[1:]
+            msg = FinalThrustMsg()
+            msg.thrusters = list(response_data)
+            self.thrust_response_pub.publish(msg)
             
 
     

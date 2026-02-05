@@ -9,7 +9,7 @@ class FinalThrustPublisher(Node):
     def __init__(self):
         super().__init__('final_thrust_publisher')
 
-        self.thrust_ublisher = self.create_publisher(
+        self.thrust_publisher = self.create_publisher(
             FinalThrustMsg,
             'final_thrust',
             10
@@ -31,8 +31,8 @@ class FinalThrustPublisher(Node):
         self.thrust = 6 * [0x64]
         self.tools = 6 * [0xAA]
 
-        # self.timer = self.create_timer(1.0, self.publish_thrust)
-        self.timer = self.create_timer(1.0, self.publish_tools)
+        self.timer = self.create_timer(1.0, self.publish_thrust)
+        # self.timer = self.create_timer(1.0, self.publish_tools)
 
     def sub_callback(self, msg):
         msg = list(msg.thrusters)

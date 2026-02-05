@@ -112,11 +112,7 @@ class ThrustToSPINode(Node):
         return
 
     def transfer(self, data, handle):
-        # byte packing
-        data += bytearray(11 * [0])
-        (count, rx_buf) = lg.spi_xfer(handle, data) #(count, rx_data)
-        # byte unpacking
-        rx_buf = rx_buf[12:21]
+        (count, rx_buf) = lg.spi_xfer(handle, data) #(count, rx_data
         if self.id == 0xF:
             self.id = 0x0
         else:

@@ -1,8 +1,8 @@
 launch:
-#   - node:
-#       pkg: sensors
-#       exec: leak_sensor.py
-#       namespace: rov
+  - node:
+      pkg: sensors
+      exec: leak_sensor.py
+      namespace: rov
 
 #   - node:
 #       pkg: sensors

@@ -154,7 +154,7 @@ class ThrustToSPINode(Node):
         self.blocked = True
 
         kill_msg = self.format_message(6 * [0], 0x0)
-        self.transfer(kill_msg)
+        self.transfer(kill_msg, self.thrust_handle)
 
         lg.spi_close(self.thrust_handle)
         lg.spi_close(self.power_handle)

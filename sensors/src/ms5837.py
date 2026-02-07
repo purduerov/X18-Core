@@ -1,5 +1,5 @@
 try:
-    import smbus2 as smbus
+    import lgpio as lg
 except:
     print("Try sudo apt-get install python-smbus2")
 
@@ -51,7 +51,8 @@ class MS5837(object):
         self._model = model
 
         try:
-            self._bus = smbus.SMBus(bus)
+            # self._bus = smbus.SMBus(bus)
+            self._handle = i2c_open(bus, self._MS5837_ADDR, 0)
         except:
             print("Bus %d is not available." % bus)
             print("Available busses are listed as /dev/i2c*")
@@ -64,12 +65,12 @@ class MS5837(object):
         self._D2 = 0
 
     def init(self):
-        if self._bus is None:
+        if self._handle < 0:
             "No bus!"
             return False
 
-        self._bus.write_byte(self._MS5837_ADDR, self._MS5837_RESET)
-
+        # self._bus.write_byte(self._MS5837_ADDR, self._MS5837_RESET)
+        write_byte = i2c_write_byte(self._handle, self._MS5837_RESET)
         # Wait for reset to complete
         sleep(0.01)
 
@@ -77,9 +78,10 @@ class MS5837(object):
 
         # Read calibration values and CRC
         for i in range(7):
-            c = self._bus.read_word_data(
-                self._MS5837_ADDR, self._MS5837_PROM_READ + 2 * i
-            )
+            # c = self._bus.read_word_data(
+            #     self._MS5837_ADDR, self._MS5837_PROM_READ + 2 * i
+            # )
+            c = i2c_read_word_data(self._handle, self._MS5837_PROM_READ + 2 * i)
             c = ((c & 0xFF) << 8) | (
                 c >> 8
             )  # SMBus is little-endian for word transfers, we need to swap MSB and LSB
@@ -93,7 +95,7 @@ class MS5837(object):
         return True
 
     def read(self, oversampling=OSR_8192):
-        if self._bus is None:
+        if self._handle < 0:
             print("No bus!")
             return False
 
@@ -102,28 +104,29 @@ class MS5837(object):
             return False
 
         # Request D1 conversion (pressure)
-        self._bus.write_byte(
-            self._MS5837_ADDR, self._MS5837_CONVERT_D1_256 + 2 * oversampling
+        valid_write = i2c_write_byte(
+            self._handle, self._MS5837_CONVERT_D1_256 + 2 * oversampling
         )
 
         # Maximum conversion time increases linearly with oversampling
         # max time (seconds) ~= 2.2e-6(x) where x = OSR = (2^8, 2^9, ..., 2^13)
         # We use 2.5e-6 for some overhead
         sleep(2.5e-6 * 2 ** (8 + oversampling))
-
-        d = self._bus.read_i2c_block_data(self._MS5837_ADDR, self._MS5837_ADC_READ, 3)
+        d = []
+        # d = self._bus.read_i2c_block_data(self._MS5837_ADDR, self._MS5837_ADC_READ, 3)
+        num_bytes_read, d1_byte_array = i2c_read_block_data(self._handle, self._MS5837_ADC_READ) #CHECK!!!
         self._D1 = d[0] << 16 | d[1] << 8 | d[2]
 
         # Request D2 conversion (temperature)
-        self._bus.write_byte(
-            self._MS5837_ADDR, self._MS5837_CONVERT_D2_256 + 2 * oversampling
+        valid_write2 = i2c_write_data(
+            self._handle, self._MS5837_CONVERT_D2_256 + 2 * oversampling
         )
 
         # As above
         sleep(2.5e-6 * 2 ** (8 + oversampling))
-
-        d = self._bus.read_i2c_block_data(self._MS5837_ADDR, self._MS5837_ADC_READ, 3)
-        self._D2 = d[0] << 16 | d[1] << 8 | d[2]
+        num_bytes_read2, d2_byte_array = i2c_read_block_data(self._handle, self._MS5837_ADC_READ) #CHECK!!!
+        # d = self._bus.read_i2c_block_data(self._MS5837_ADDR, self._MS5837_ADC_READ, 3)
+        self._D2 = d2_byte_array[0] << 16 | d2_byte_array[1] << 8 | d2_byte_array[2]
 
         # Calculate compensated pressure and temperature
         # using raw ADC values and internal calibration

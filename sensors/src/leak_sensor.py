@@ -15,24 +15,25 @@ class LeakSense(Node):
 
         timer_period = 1
         self.time = self.create_timer(timer_period, self.timer_callback)
-        self.handle = 0
-        try:
-            self.handle = lg.gpiochip_open(0)
-            lg.gpio_claim_input(self.handle, INPUT_PIN)
-        except:
-            self.get_logger().info("Error intializing GPIO")
+        
+        self.get_logger().info("begin gpio init")
+        self.gpio_handle = lg.gpiochip_open(4)
+        self.get_logger().info(f"Handle {self.gpio_handle} : Gpiochip data{lg.gpio_get_chip_info(self.gpio_handle)}")
+        lg.gpio_claim_input(self.gpio_handle, INPUT_PIN)
+        self.get_logger().info(f"Gpio mode{lg.gpio_get_mode(self.gpio_handle, INPUT_PIN)}")
+        
         
 
 
     def timer_callback(self):
         msg = Bool()
-        leak_status = lg.gpio_read(self.handle, INPUT_PIN)
+        leak_status = lg.gpio_read(self.gpio_handle, INPUT_PIN)
         msg.data = bool(leak_status)
-        self.get_logger().info(f"LEAK DETECTED")
+        self.get_logger().info(f"Leak status: {leak_status}")
         self.publisher_.publish(msg)
     
     def close_gpio(self):
-        lg.gpio_free(self.handle, INPUT_PIN)
+        lg.gpio_free(self.gpio_handle, INPUT_PIN)
         lg.gpiochip_close(0)
 
 

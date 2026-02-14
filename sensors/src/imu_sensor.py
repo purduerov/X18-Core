@@ -6,7 +6,7 @@ import time
 import rclpy
 from rclpy.node import Node
 
-from BNO055 import BNO055
+from BNO085 import BNO085
 from shared_msgs.msg import ImuMsg
 
 
@@ -22,6 +22,9 @@ def clamp_angle_neg180_to_180(angle):
 def clamp_angle_0_to_360(angle):
     return (angle + 1 * 360) - math.floor((angle + 2 * 360) / 360) * 360
 
+I2C_BUS = 1
+IMU_ADDR = 0x00
+REPORT_RATE = 1000000
 
 class ImuSensor(Node):
     IMU_PITCH_OFFSET = 0.0
@@ -31,36 +34,32 @@ class ImuSensor(Node):
     def __init__(self):
         super().__init__("imu_sensor")
 
-        self.imu = BNO055()
+        self.imu = BNO085(I2C_BUS, IMU_ADDR, 0)
+        self.imu.setup(REPORT_RATE)
         time.sleep(1)
         self.pub = self.create_publisher(ImuMsg, "imu", 1)
 
         self.timer = self.create_timer(1 / 20.0, self.loop)
 
     def loop(self):
-        if self.imu.update():
+        if self.imu.read():
             out_message = ImuMsg()
 
             # convert everything to a 0 to 360 to apply a 1d rotation then convert back to -180 to 180
-            rov_pitch = clamp_angle_0_to_360(self.imu.roll()) - self.IMU_ROLL_OFFSET
-            rov_roll = clamp_angle_0_to_360(self.imu.pitch()) - self.IMU_YAW_OFFSET
-            rov_yaw = clamp_angle_0_to_360(self.imu.yaw()) - self.IMU_PITCH_OFFSET
+            rov_pitch = clamp_angle_0_to_360(self.imu.rotation_data[0]) - self.IMU_ROLL_OFFSET
+            rov_roll = clamp_angle_0_to_360(self.imu.rotation_data[1]) - self.IMU_YAW_OFFSET
+            rov_yaw = clamp_angle_0_to_360(self.imu.rotation_data[2]) - self.IMU_PITCH_OFFSET
 
             out_message.gyro = [rov_pitch, rov_roll, rov_yaw]
 
-            rov_x_accel = self.imu.acceleration_x()
-            rov_y_accel = self.imu.acceleration_y()
-            rov_z_accel = self.imu.acceleration_z()
+            rov_x_accel = self.imu.accel_data[0]
+            rov_y_accel = self.imu.accel_data[1]
+            rov_z_accel = self.imu.accel_data[2]
+
+            self.get_logger().info(f"Accel: {rov_x_accel, rov_y_accel, rov_z_accel}\n Rotation {rov_pitch, rov_yaw, rov_roll}")
             out_message.accel = [rov_x_accel, rov_y_accel, rov_z_accel]
 
             self.pub.publish(out_message)
-
-    def reset_imu_offsets(self):
-        self.imu.update()
-
-        self.IMU_PITCH_OFFSET = self.imu.pitch()
-        self.IMU_ROLL_OFFSET = self.imu.roll()
-        self.IMU_YAW_OFFSET = self.imu.yaw()
 
 
 def main(args=None):

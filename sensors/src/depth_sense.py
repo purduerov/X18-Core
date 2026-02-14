@@ -3,7 +3,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64
-
+from shared_msgs.msg import SensorCoordination
 # Library for the depth sensor
 # More info: https://github.com/bluerobotics/ms5837-python
 import ms5837
@@ -13,6 +13,10 @@ class DepthSense(Node):
     def __init__(self):
         super().__init__("depth")
         self.publisher_ = self.create_publisher(Float64, "depth", 10)
+        self.coord_publisher_ = self.create_publisher(SensorCoordination, "sensor_coordination", 10)
+        self.coord_subscriber = self.create_subscription(SensorCoordination, "sensor_coordination", self.coord_callback, 10)
+        self.i2c_status = []
+        
         timer_period = 1.0 / 20.0  # 20 Hz
         self.timer = self.create_timer(timer_period, self.timer_callback)
         try:
@@ -26,13 +30,25 @@ class DepthSense(Node):
 
     def timer_callback(self):
         msg = Float64()
-        self.sensor.read()  # allows the sensor to read new data     -> maybe need to add this at the begining of each call to pull new data
-        msg.data = self.sensor.depth()
+        if self.i2c_status == [True, False, False, True]:
+            self.i2c_status = [False, True, False, False]
+            self.coord_publisher_.publish(self.i2c_status)
+            self.sensor.read()  # allows the sensor to read new data     -> maybe need to add this at the begining of each call to pull new data
+            msg.data = self.sensor.depth()
+            self.publisher_.publish(msg)
+            self.get_logger().info(f"Depth: {round(msg.data, 3)} km")
+        elif self.i2c_status == [False, True, False, False]:
+            self.i2c_status = [False, True, False, False]
+            self.coord_publisher_.publish(self.i2c_status)
+
+
 
         # publishes depth in meters at a rate of 20Hz (no it doesnt)
-        self.publisher_.publish(msg)
-        self.get_logger().info(f"Depth: {round(msg.data, 3)} km")
-
+        # self.publisher_.publish(msg)
+        # self.get_logger().info(f"Depth: {round(msg.data, 3)} km")
+    
+    def coord_callback(self, msg):
+        self.i2c_status = list(msg.i2c_status)
 
 def main(args=None):
     rclpy.init(args=args)

@@ -8,6 +8,9 @@ from shared_msgs.msg import SensorCoordination
 # More info: https://github.com/bluerobotics/ms5837-python
 import ms5837
 
+IMU_COMPLETE = [True, False, False, True]
+DEPTH_READING = [False, True, False, False]
+DEPTH_COMPLETE = [False, True, False, True]
 
 class DepthSense(Node):
     def __init__(self):
@@ -30,15 +33,15 @@ class DepthSense(Node):
 
     def timer_callback(self):
         msg = Float64()
-        if self.i2c_status == [True, False, False, True]:
-            self.i2c_status = [False, True, False, False]
+        if self.i2c_status == IMU_COMPLETE:
+            self.i2c_status = DEPTH_READING
             self.coord_publisher_.publish(self.i2c_status)
             self.sensor.read()  # allows the sensor to read new data     -> maybe need to add this at the begining of each call to pull new data
             msg.data = self.sensor.depth()
             self.publisher_.publish(msg)
             self.get_logger().info(f"Depth: {round(msg.data, 3)} km")
-        elif self.i2c_status == [False, True, False, False]:
-            self.i2c_status = [False, True, False, False]
+        elif self.i2c_status == DEPTH_READING:
+            self.i2c_status = DEPTH_COMPLETE
             self.coord_publisher_.publish(self.i2c_status)
 
 

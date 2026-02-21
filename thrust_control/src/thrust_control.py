@@ -159,8 +159,8 @@ class ThrustControlNode(Node):
         pwm_values = self.desired_thrusters
         # self.get_logger().info("pwm: " + str(pwm_values))
 
-        thrusters = [127, 127, 127, 127, 127, 127, 127, 127]
-        for i in range(0, 8):
+        thrusters = [127, 127, 127, 127, 127, 127]
+        for i in range(0, 6):
             thrusters[i] = int((pwm_values[i] + 1) * 127.5)
             if thrusters[i] > 255:
                 thrusters[i] = 255

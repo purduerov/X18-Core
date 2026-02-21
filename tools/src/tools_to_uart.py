@@ -4,16 +4,14 @@ import rclpy
 import time
 from rclpy.node import Node
 from crccheck.crc import Crc32Mpeg2
-import serial
+import serial 
 
 from shared_msgs.msg import ToolsMotorMsg
-
 
 def split_bytes(num):
     byte2 = num & 0xFF
     byte1 = (num >> 8) & 0xFF
     return [byte1, byte2]
-
 
 class ToolsToUARTNode(Node):
     def __init__(self):
@@ -24,9 +22,11 @@ class ToolsToUARTNode(Node):
         self.identifier = 0
 
         self.TOOLS_ID = 2
-
+        
         self.ser = serial.Serial(
-            port="/dev/serial0", baudrate=9600, timeout=0.1  # THIS WILL BE DIFFERENT
+            port = '/dev/serial0', # THIS WILL BE DIFFERENT
+            baudrate = 9600,
+            timeout=0.1
         )
 
         if not self.ser.is_open:
@@ -34,7 +34,10 @@ class ToolsToUARTNode(Node):
 
         # Subscribe to tools motor and start callback function
         self.tools_sub = self.create_subscription(
-            ToolsMotorMsg, "/tools_motor", self.tools_received, 10
+            ToolsMotorMsg, 
+            "/tools_motor", 
+            self.tools_received, 
+            10
         )
 
         return
@@ -58,12 +61,7 @@ class ToolsToUARTNode(Node):
         split_identifier = split_bytes(self.identifier)
         message_body = [self.TOOLS_ID] + list(split_identifier) + list(self.data)
 
-        packet = ToolsPacket(
-            device_id=self.TOOLS_ID,
-            message_id=self.identifier,
-            data=self.data,
-            crc=self.compute_crc(message_body),
-        )
+        packet = ToolsPacket(device_id=self.TOOLS_ID, message_id=self.identifier, data=self.data, crc=self.compute_crc(message_body))
         return packet.pack()
 
     def compute_crc(self, message):
@@ -73,15 +71,9 @@ class ToolsToUARTNode(Node):
 
     def handler(self):
         message_body = [self.TOOLS_ID, 0, 0] + ([127] * 7)
-        packet = ToolsPacket(
-            device_id=self.TOOLS_ID,
-            message_id=0,
-            data=([127] * 7),
-            crc=self.compute_crc(message_body),
-        )
+        packet = ToolsPacket(device_id=self.TOOLS_ID, message_id=0, data=([127] * 7), crc=self.compute_crc(message_body))
         self.ser.write(packet.pack())
         return
-
 
 def main(args=None):
     rclpy.init(args=args)
@@ -94,7 +86,6 @@ def main(args=None):
 
     node.destroy_node()
     rclpy.shutdown()
-
 
 if __name__ == "__main__":
     main()

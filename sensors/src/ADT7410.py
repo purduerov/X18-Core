@@ -31,13 +31,19 @@ class ADT7410(object):
         # Wait for reset to complete
         sleep(0.01)
 
-        return True
+        self.data = []
+        #data = i2c_read_word_data(self.handle, self._ADT7410_TEMP_ADDR)
 
-    def read_temperature(self):
-        if self._handle < 0:
-            print("No bus!")
-            return False
+        self.data[1] = lg.i2c_read_byte_data(self._handle, self._ADT7410_TEMP_ADDR)
+        self.data[0] = lg.i2c_read_byte_data(self._handle, self._ADT7410_TEMP_ADDR + 1)
 
-        self._temperature = lg.i2c_read_i2c_block_data(self._handle, self._ADT7410_TEMP_ADDR, 2)
-        self._temperature[1] = (self._temperature[0] << 5) | (self._temperature[1] >> 3)
-        self._temperature[0] = self._temperature[0] >> 3        
+
+        #still need to send the data to the hat_temp file
+        msb = self.data[1]
+        lsb = self.data[0]
+        temp_combined = (msb << 8 | (lsb & 0xFF)) >> 3
+
+        if temp_combined > 4095:
+            temp_combined -= 8192
+
+        temperature_c = temp_combined / 16.0

@@ -28,7 +28,7 @@ class HatTempSensor(Node):
             self.coord_publisher_.publish(self.i2c_status)
 
             #read temperature
-            msg.data = self.read_temperature()
+            msg.data = self.sensor.read_temperature()
             self.publisher_.publish(msg)
         elif self.i2c_status == TEMP_READING:
             self.i2c_status = TEMP_COMPLETE

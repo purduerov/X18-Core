@@ -32,6 +32,9 @@ class ADT7410(object):
         sleep(0.01)
 
         self.data = []
+        
+
+    def read_temperature(self):
         #data = i2c_read_word_data(self.handle, self._ADT7410_TEMP_ADDR)
 
         self.data[1] = lg.i2c_read_byte_data(self._handle, self._ADT7410_TEMP_ADDR)
@@ -47,3 +50,5 @@ class ADT7410(object):
             temp_combined -= 8192
 
         temperature_c = temp_combined / 16.0
+
+        return temperature_c

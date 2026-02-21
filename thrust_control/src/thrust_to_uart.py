@@ -4,9 +4,8 @@ import time
 import rclpy
 from rclpy.node import Node
 from crccheck.crc import Crc32Mpeg2
-import serial
+import serial 
 from serial.rs485 import RS485Settings
-
 # import wiringpi
 # import RPi.GPIO as GPIO
 import struct
@@ -15,12 +14,10 @@ from shared_msgs.msg import FinalThrustMsg
 from utils.heartbeat_helper import HeartbeatHelper
 from gpiozero import OutputDevice
 
-
 def split_bytes(num):
     byte2 = num & 0xFF
     byte1 = (num >> 8) & 0xFF
     return [byte1, byte2]
-
 
 class ThrustToUARTNode(Node):
     def __init__(self):
@@ -39,10 +36,14 @@ class ThrustToUARTNode(Node):
         # setup hardware configurations
         self.stm_enable_pin = OutputDevice(18, initial_value=False)
 
-        # open UART serial port
+        # open UART serial port 
         # sudo chmod 666 /dev/serial0
-        self.ser = serial.Serial(port="/dev/ttyAMA0", baudrate=115200, timeout=0.1)
-        self.ser.rs485_mode = RS485Settings()  # defaults to using RTS for DE
+        self.ser = serial.Serial(
+            port = '/dev/ttyAMA0',
+            baudrate = 115200,
+            timeout=0.1
+        )
+        self.ser.rs485_mode = RS485Settings()   # defaults to using RTS for DE
 
         if not self.ser.is_open:
             self.ser.open()
@@ -68,7 +69,7 @@ class ThrustToUARTNode(Node):
             FinalThrustMsg,  # message, updated 50 times per second regardless of change
             "final_thrust",  # topic
             self.thrust_received,  # callback function
-            10,
+            10
         )
 
         return
@@ -120,39 +121,28 @@ class ThrustToUARTNode(Node):
             self.get_logger().info("RECEIVED: " + str(list(response)))
 
             try:
-                received_packet = BasePacket.unpack(
-                    response, data_length=len(response) - 4
-                )
-                if received_packet.device_id != 1:
+                received_packet = BasePacket.unpack(response, data_length=len(response) - 4)
+                if received_packet.device_id != 1: 
                     self.get_logger().info("ERROR: INVALID DEVICE ID")
-                sent_packet = BasePacket.unpack(
-                    self.last_message, data_length=len(self.last_message) - 4
-                )
+                sent_packet = BasePacket.unpack(self.last_message, data_length=len(self.last_message) - 4)
                 if received_packet.crc != sent_packet.crc:
                     self.get_logger().info("ERROR: CRC VALUES DO NOT MATCH")
             except:
                 self.get_logger().info("Unable to unpack received packet")
 
         return
-
+    
     def format_message(self):
         self.set_message_id()
         message_body = list(self.data)
-        packet = ThrustPacket(
-            device_id=self.THRUST_ID,
-            message_id=self.identifier,
-            data=self.data,
-            crc=self.compute_crc(message_body),
-        )
+        packet = ThrustPacket(device_id=self.THRUST_ID, message_id=self.identifier, data=self.data, crc=self.compute_crc(message_body))
         self.get_logger().info(f"Sending: {[f'{byte:02x}' for byte in packet.pack()]}")
         return packet.pack()
 
     def compute_crc(self, message):
         message_list = []
-        for item in message:
-            message_list.extend(
-                [0x00, 0x00, 0x00, item]
-            )  # processed as 32-bit values on STM, must add padding to create 32-bit number
+        for item in message:    
+            message_list.extend([0x00, 0x00, 0x00, item]) # processed as 32-bit values on STM, must add padding to create 32-bit number
         crc = Crc32Mpeg2.calc(message_list)
         return crc & 0xFF
 
@@ -161,13 +151,10 @@ class ThrustToUARTNode(Node):
         self.blocked = True
         message_body = [self.THRUST_ID, 0, 0] + ([127] * 8)
         crc_val = self.compute_crc(message_body)
-        packet = ThrustPacket(
-            device_id=self.THRUST_ID, message_id=0, data=([127] * 8), crc=crc_val
-        )
+        packet = ThrustPacket(device_id=self.THRUST_ID, message_id=0, data=([127] * 8), crc=crc_val)
         self.ser.write(packet.pack())
         self.get_logger().info(" ".join(f"{x:02x}" for x in (message_body + [crc_val])))
         return
-
 
 def main(args=None):
     rclpy.init(args=args)
@@ -177,10 +164,9 @@ def main(args=None):
         rclpy.spin(node)
     except KeyboardInterrupt:
         node.handler()
-
+    
     if rclpy.ok():
         rclpy.shutdown()
-
 
 if __name__ == "__main__":
     main()

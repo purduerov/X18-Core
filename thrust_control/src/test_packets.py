@@ -4,18 +4,15 @@ import serial
 from packets import ThrustPacket
 
 # Create a serial connection to simulate the write/read test
-ser = serial.Serial(port="/dev/serial0", baudrate=9600, timeout=1)
+ser = serial.Serial(port='/dev/serial0', baudrate=9600, timeout=1)
 
 # Ensure UART is open
 if not ser.is_open:
     ser.open()
 
-
 def test_packet_write():
     # Create a ThrustPacket instance
-    test_packet = ThrustPacket(
-        device_id=1, message_id=123, data=[10, 20, 30, 40, 50, 60, 70, 80], crc=9999
-    )
+    test_packet = ThrustPacket(device_id=1, message_id=123, data=[10, 20, 30, 40, 50, 60, 70, 80], crc=9999)
 
     # Pack the data into binary format
     packed_data = test_packet.pack()
@@ -41,7 +38,6 @@ def test_packet_write():
 
     # Close the serial port after test
     ser.close()
-
 
 # Run the test function
 if __name__ == "__main__":

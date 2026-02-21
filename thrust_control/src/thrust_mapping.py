@@ -9,34 +9,30 @@ THRUST_MIN = -2.92  # kg f
 class ThrustMapper:
     def __init__(self):
         self.invert_array = [
-            -1,  # 1 BOTTOM
-            1,  # 2
-            -1,  # 3
-            -1,  # 4
-            1,  # 5 TOP
-            -1,  # 6
-            1,  # 7
-            1,  # 8
+            -1, # 1 BOTTOM
+            1, # 2
+            -1, # 3
+            -1, # 4
+            1, # 5 TOP
+            -1, # 6
+            1, # 7
+            1, # 8
         ]  # -1 inverts direction, 1 keeps the same direction
         self.com = np.array([0.0, 0.0, 0.0]) * SCALE
         # Values for horizontal thrusters
-        x_pos_horiz = 17.182 / 2  # values in inches
-        y_pos_horiz = 15.676 / 2  # values in inches
-        z_pos_horiz = 0  # values in inches
+        x_pos_horiz = 17.182 / 2 # values in inches
+        y_pos_horiz = 15.676 / 2 # values in inches
+        z_pos_horiz = 0 # values in inches
         # Values for vertical thrusters
-        x_pos_vert = 8.4 / 2  # values in inches
-        y_pos_vert = 15.045 / 2  # values in inches
-        z_pos_vert = 5.636  # values in inches
+        x_pos_vert = 8.4 / 2 # values in inches
+        y_pos_vert = 15.045 / 2 # values in inches
+        z_pos_vert = 5.636 # values in inches
         self.location_frame_absolute = (
             np.matrix(
                 [
                     [x_pos_horiz, y_pos_horiz, z_pos_horiz],  # Thruster 1 (horizontal)
                     [x_pos_horiz, -y_pos_horiz, z_pos_horiz],  # Thruster 2 (horizontal)
-                    [
-                        -x_pos_horiz,
-                        -y_pos_horiz,
-                        z_pos_horiz,
-                    ],  # Thruster 3 (horizontal)
+                    [-x_pos_horiz, -y_pos_horiz, z_pos_horiz],  # Thruster 3 (horizontal)
                     [-x_pos_horiz, y_pos_horiz, z_pos_horiz],  # Thruster 4 (horizontal)
                     [x_pos_vert, y_pos_vert, z_pos_vert],  # Thruster 5 (vertical)
                     [x_pos_vert, -y_pos_vert, z_pos_vert],  # Thruster 6 (vertical)

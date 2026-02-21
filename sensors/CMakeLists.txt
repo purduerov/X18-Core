@@ -19,7 +19,6 @@ install(PROGRAMS
  # src/PID_depth_control.py
   src/leak_sensor.py
   src/water_temp.py
-  src/current_monitor.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

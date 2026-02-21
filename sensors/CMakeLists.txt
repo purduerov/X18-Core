@@ -21,6 +21,8 @@ install(PROGRAMS
   src/water_temp.py
   src/imu_sensor.py
   src/BNO085.py
+  src/hat_temp.py
+  src/ADT7410.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

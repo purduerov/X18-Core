@@ -23,3 +23,13 @@ launch:
 #       pkg: sensors
 #       exec: water_temp.py
 #       namespace: rov
+      
+#   - node:
+#       pkg: sensors
+#       exec: hat_temp.py
+#       namespace: rov
+      
+#   - node:
+#       pkg: sensors
+#       exec: ADT7410.py
+#       namespace: rov

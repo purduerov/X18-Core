@@ -1,7 +1,7 @@
 #! /usr/bin/python3
 import rclpy
 from rclpy.node import Node
-from shared_msgs.msg import FinalThrustMsg,ToolsMotorMsg
+from shared_msgs.msg import FinalThrustMsg,ToolsMotorMsg, RovVelocityCommand
 import time
 
 
@@ -28,11 +28,17 @@ class FinalThrustPublisher(Node):
             10
         )
 
+        self.publish_main = self.create_publisher(
+            RovVelocityCommand,
+            'rov_velocity',
+        )
+
         self.thrust = 6 * [0x64]
         self.tools = 6 * [0xAA]
 
-        self.timer = self.create_timer(1.0, self.publish_thrust)
+        # self.timer = self.create_timer(1.0, self.publish_thrust)
         # self.timer = self.create_timer(1.0, self.publish_tools)
+        self.timer = self.create_time(1.0, self.publish_main)
 
     def sub_callback(self, msg):
         msg = list(msg.thrusters)
@@ -47,6 +53,22 @@ class FinalThrustPublisher(Node):
         msg = ToolsMotorMsg()
         msg.tools = self.tools
         self.tools_publisher.publish(msg)
+    
+    def publish_main(self):
+        msg = RovVelocityCommand()
+        msg.linear.x = 0x11
+        msg.linear.y = 0x22
+        msg.linear.z = 0x33
+        msg.angular.x = 0xAA
+        msg.angular.y = 0xBB
+        msg.angular.z = 0xCC
+
+        msg.is_fine = 0x01
+        msg.is_pool_centric = True
+        msg.pitch_lock = False
+        msg.depth_lock = False
+        msg.current_config = "lol"
+    
 
         
     

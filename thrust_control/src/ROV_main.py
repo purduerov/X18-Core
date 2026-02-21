@@ -2,7 +2,7 @@
 import rclpy
 from rclpy.node import Node
 
-from shared_msgs.msg import ThrustCommandMsg, RovVelocityCommand, ImuVelocityCommand
+from shared_msgs.msg import ThrustCommandMsg, RovVelocityCommand, ImuVelocityCommand, ToolsCommandMsg, ToolsMotorMsg, FinalThrustMsg
 from utils.heartbeat_helper import HeartbeatHelper
 
 
@@ -25,6 +25,7 @@ class ROVMainNode(Node):
         self.controller_sub = self.create_subscription(
             RovVelocityCommand, "rov_velocity", self._controller_input, 10
         )
+
         self.imu_control_sub = self.create_subscription(
             ImuVelocityCommand, "imu_vel_command", self._imu_input, 10
         )
@@ -47,7 +48,6 @@ class ROVMainNode(Node):
         self.controller_percent_power[5] = 1
         self.mode_fine = 1
         self.is_pool_centric = True
-        print("TESTTING")
 
         self.timer = self.create_timer(1 / 15.0, self.on_loop)
         self.is_pool_centric = False
@@ -65,6 +65,7 @@ class ROVMainNode(Node):
         thrust_command.is_pool_centric = self.is_pool_centric
 
         self.thrust_command_pub.publish(thrust_command)
+        self.tools_command_pub.publisher()
 
     def _controller_input(self, msg):
         self.controller_percent_power[0] = msg.twist.linear.x

@@ -43,6 +43,11 @@ std_multiplier = [1.5, 1.5, 1.5, 0.2, 1.0, 1.0]
 yeet_multiplier = [3, 3, 3, 0.4, 2.0, 2.0]
 mega_yeet_multiplier = [6, 6, 6, 0.4, 2.0, 2.0]
 
+MULT_DICT = {
+    multiplier.fine : fine_multiplier, multiplier.standard : std_multiplier,
+    multiplier.yeet : yeet_multiplier, multiplier.MEGAYEET : mega_yeet_multiplier
+    }
+
 
 class ThrustControlNode(Node):
     def __init__(self):
@@ -62,11 +67,6 @@ class ThrustControlNode(Node):
         self.command_sub = self.create_subscription(
             ThrustCommandMsg, "thrust_command", self._pilot_command, 10
         )
-        self.com_sub = self.create_subscription(
-            ComMsg, "com_tweak", self._com_update, 10
-        )
-        # assume IMU measurements in Roll-Pitch-Yaw
-        # self.rotation_sub = self.create_subscription(ImuMsg, 'imu', self._orientation_update, 10)
 
         # initialize thrust arrays
         self.desired_effort = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -143,20 +143,9 @@ class ThrustControlNode(Node):
             self.desired_effort /= np.linalg.norm(self.desired_effort)
         # self.get_logger().info("pre-ramped desired_effort: " + str(self.desired_effort))
 
-        if self.power_mode == 0:  # convert from normalized %effort to
-            self.desired_effort = self.desired_effort * fine_multiplier
-        #    self.get_logger().info("multiplier: " + str(fine_multiplier))
 
-        elif self.power_mode == 1:
-            self.desired_effort = self.desired_effort * std_multiplier
-        #   self.get_logger().info("multiplier: " + str(std_multiplier))
-
-        elif self.power_mode == 2:
-            self.desired_effort = self.desired_effort * yeet_multiplier
-        #  self.get_logger().info("multiplier: " + str(yeet_multiplier))
-        else:
-            self.desired_effort = self.desired_effort * mega_yeet_multiplier
-        # self.get_logger().info("multiplier: " + str(mega_yeet_multiplier))
+        # scale effort by multplier value
+        self.desired_effort = MULT_DICT[self.power_mode]
 
         # self.get_logger().info("desired_effort: " + str(self.desired_effort))
 

@@ -58,7 +58,7 @@ class ROVMainNode(Node):
         thrust_command.is_pool_centric = self.is_pool_centric
 
         self.thrust_command_pub.publish(thrust_command)
-        self.tools_command_pub.publisher()
+        # self.tools_command_pub.publisher()
 
     def _controller_input(self, msg):
         self.controller_percent_power[0] = msg.twist.linear.x
@@ -73,7 +73,7 @@ class ROVMainNode(Node):
     def _imu_input(self, msg):
         self.imu_velocity = msg.angular
 
-    def thrust_response_callback(self):
+    def thrust_response_callback(self, msg):
         # EDIT LATER
         # fill in once we know how surface will work
         return

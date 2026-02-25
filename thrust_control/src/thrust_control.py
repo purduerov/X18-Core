@@ -76,7 +76,7 @@ class ThrustControlNode(Node):
 
     def _pilot_command(self, data):
         self.desired_effort = data.desired_thrust
-        self.power_mode = data.is_fine
+        # self.power_mode = data.is_fine
         # self.get_logger().info("power_mode: " + str(self.power_mode))
 
         if data.is_pool_centric:

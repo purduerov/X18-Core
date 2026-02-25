@@ -1,8 +1,8 @@
 launch:
-  # - include:
-  #     file: $(find-pkg-share thrust_control)/launch/thrust_control_launch.yaml
   - include:
-      file: $(find-pkg-share sensors)/launch/sensors_launch.yaml
+      file: $(find-pkg-share thrust_control)/launch/thrust_control_launch.yaml
+  # - include:
+  #     file: $(find-pkg-share sensors)/launch/sensors_launch.yaml
   # - include:
   #     file: $(find-pkg-share tools)/launch/tools_launch.yaml
 #   - include:

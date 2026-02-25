@@ -163,7 +163,7 @@ class ThrustToSPINode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = ThrustToSPINode(0, (0, 1), 10000, 0)
+    node = ThrustToSPINode(0, (0, 1), 1000000, 0)
 
     try:
         rclpy.spin(node)

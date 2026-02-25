@@ -8,13 +8,9 @@ from utils.heartbeat_helper import HeartbeatHelper
 
 class ROVMainNode(Node):
     controller_percent_power = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    # controller_tools_command = [0, 0, 0, 0]
-    # translation_Scaling = 3.2
-    # rotation_Scaling = 1.5
+
     mode_fine = 0
 
-    #   imu_angle_lock_enable = True  # TODO: setting this
-    imu_velocity = [0.0, 0.0, 0.0]  # Tuple of [roll vel., pitch vel., yaw vel.]
 
     def __init__(self):
         super().__init__("ROV_main")
@@ -26,9 +22,6 @@ class ROVMainNode(Node):
             RovVelocityCommand, "rov_velocity", self._controller_input, 10
         )
 
-        self.imu_control_sub = self.create_subscription(
-            ImuVelocityCommand, "imu_vel_command", self._imu_input, 10
-        )
         self.thrust_command_pub = self.create_publisher(
             ThrustCommandMsg, "thrust_command", 10
         )

@@ -38,14 +38,9 @@ class reference_frame(Enum):
 
 
 # [x trans, y trans, z trans, x rot, y rot, z rot]
-fine_multiplier = [1.0, 1.0, 1.0, 0.2, 0.6, 0.4]
-std_multiplier = [1.5, 1.5, 1.5, 0.2, 1.0, 1.0]
-yeet_multiplier = [3, 3, 3, 0.4, 2.0, 2.0]
-mega_yeet_multiplier = [6, 6, 6, 0.4, 2.0, 2.0]
-
 MULT_DICT = {
-    multiplier.fine : fine_multiplier, multiplier.standard : std_multiplier,
-    multiplier.yeet : yeet_multiplier, multiplier.MEGAYEET : mega_yeet_multiplier
+    multiplier.fine : [1.0, 1.0, 1.0, 0.2, 0.6, 0.4], multiplier.standard : [1.5, 1.5, 1.5, 0.2, 1.0, 1.0],
+    multiplier.yeet : [3, 3, 3, 0.4, 2.0, 2.0], multiplier.MEGAYEET : [6, 6, 6, 0.4, 2.0, 2.0]
     }
 
 
@@ -92,44 +87,9 @@ class ThrustControlNode(Node):
 
         self.on_loop()
 
-    def _com_update(self, msg):
-        self.tm.location = self.tm.change_origin(msg.com[0], msg.com[1], msg.com[2])
-        self.tm.torque = self.tm.torque_values()
-        self.tm.thruster_force_map = self.tm.thruster_force_map_values()
-
-    #  self.get_logger().info("changed" + str(msg.com[0]) + ":" + str(msg.com[1]) + ":" + str(msg.com[2]))
-
-    def _orientation_update(self, msg):
-        rot_x = np.array(
-            [
-                [1.0, 0.0, 0.0],
-                [
-                    0,
-                    np.cos(np.deg2rad(msg.gyro[0])),
-                    -1 * np.sin(np.deg2rad(msg.gyro[0])),
-                ],
-                [0, np.sin(np.deg2rad(msg.gyro[0])), np.cos(np.deg2rad(msg.gyro[0]))],
-            ]
-        )
-        rot_y = np.array(
-            [
-                [np.cos(np.deg2rad(msg.gyro[1])), 0.0, np.sin(np.deg2rad(msg.gyro[1]))],
-                [0.0, 1.0, 0.0],
-                [
-                    -1 * np.sin(np.deg2rad(msg.gyro[1])),
-                    0.0,
-                    np.cos(np.deg2rad(msg.gyro[1])),
-                ],
-            ]
-        )
-        # I can never keep roll-pitch-yaw to rotation matrix straight,
-        # used this source https://msl.cs.uiuc.edu/planning/node102.html
-        self.orientation_matrix = np.matmul(rot_y, rot_x)
-
-    #   self.get_logger().info("rotation matrix: " + str(self.orientation_matrix))
 
     def on_loop(self):
-        global fine_multiplier, std_multiplier, yeet_multiplier, mega_yeet_multiplier
+        global MULT_DICT
 
         if self.frame == reference_frame.spatial:
             translational_effort = np.array(self.desired_effort[0:3])

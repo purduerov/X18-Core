@@ -15,8 +15,6 @@ class ThrustMapper:
             -1,  # 4
             1,  # 5 TOP
             -1,  # 6
-            1,  # 7
-            1,  # 8
         ]  # -1 inverts direction, 1 keeps the same direction
         self.com = np.array([0.0, 0.0, 0.0]) * SCALE
         # Values for horizontal thrusters
@@ -32,16 +30,10 @@ class ThrustMapper:
                 [
                     [x_pos_horiz, y_pos_horiz, z_pos_horiz],  # Thruster 1 (horizontal)
                     [x_pos_horiz, -y_pos_horiz, z_pos_horiz],  # Thruster 2 (horizontal)
-                    [
-                        -x_pos_horiz,
-                        -y_pos_horiz,
-                        z_pos_horiz,
-                    ],  # Thruster 3 (horizontal)
+                    [-x_pos_horiz, -y_pos_horiz, z_pos_horiz,],  # Thruster 3 (horizontal)
                     [-x_pos_horiz, y_pos_horiz, z_pos_horiz],  # Thruster 4 (horizontal)
                     [x_pos_vert, y_pos_vert, z_pos_vert],  # Thruster 5 (vertical)
                     [x_pos_vert, -y_pos_vert, z_pos_vert],  # Thruster 6 (vertical)
-                    [-x_pos_vert, -y_pos_vert, z_pos_vert],  # Thruster 7 (vertical)
-                    [-x_pos_vert, y_pos_vert, z_pos_vert],  # Thruster 8 (vertical)
                 ]
             )
             * SCALE
@@ -56,14 +48,12 @@ class ThrustMapper:
         z_comp_vert = 1
 
         self.direction = [
-            [-x_comp_horiz, y_comp_horiz, z_comp_horiz],  # Thruster 1 (horizontal)
-            [-x_comp_horiz, -y_comp_horiz, z_comp_horiz],  # Thruster 2 (horizontal)
-            [x_comp_horiz, -y_comp_horiz, z_comp_horiz],  # Thruster 3 (horizontal)
+            [x_comp_horiz, y_comp_horiz, z_comp_horiz],  # Thruster 1 (horizontal)
+            [x_comp_horiz, -y_comp_horiz, z_comp_horiz],  # Thruster 2 (horizontal)
+            [-x_comp_horiz, -y_comp_horiz, z_comp_horiz],  # Thruster 3 (horizontal)
             [-x_comp_horiz, y_comp_horiz, z_comp_horiz],  # Thruster 4 (horizontal)
             [x_comp_vert, y_comp_vert, -z_comp_vert],  # Thruster 5 (vertical)
-            [x_comp_vert, y_comp_vert, -z_comp_vert],  # Thruster 6 (vertical)
-            [x_comp_vert, y_comp_vert, -z_comp_vert],  # Thruster 7 (vertical)
-            [x_comp_vert, y_comp_vert, -z_comp_vert],  # Thruster 8 (vertical)
+            [x_comp_vert, -y_comp_vert, -z_comp_vert],  # Thruster 6 (vertical)
         ]
         print(np.matrix(self.direction))
         self.direction = np.matrix(
@@ -105,7 +95,7 @@ class ThrustMapper:
                 force *= min(scale_max, scale_min)
 
             return np.transpose(force).tolist()[0]
-        return np.zeros(8)
+        return np.zeros(6)
 
     @staticmethod
     def thrust_to_pwm(thrust_val):

@@ -85,7 +85,7 @@ class ThrustToSPINode(Node):
 
     # thrust callback function
     def thrust_received(self, msg):
-        self.get_logger().info(f"THRUST SENT: {[hex(n) for n in self.thrust_data]}")
+        # self.get_logger().info(f"THRUST SENT: {[hex(n) for n in self.thrust_data]}")
         self.thrust_data = self.thrust_map(msg.thrusters)
         self.message_received(self.thrust_data, 0xf, self.thrust_handle)
         return
@@ -117,7 +117,7 @@ class ThrustToSPINode(Node):
             self.id = 0x0
         else:
             self.id += 1
-        self.get_logger().info(f"RECEIVED DATA {[hex(n) for n in list(rx_buf)]}") 
+        # self.get_logger().info(f"RECEIVED DATA {[hex(n) for n in list(rx_buf)]}") 
         return rx_buf #maybe return just the second part of the tuple
 
     def format_message(self, data, msgType):
@@ -163,7 +163,7 @@ class ThrustToSPINode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = ThrustToSPINode(0, (0, 1), 1000000, 0)
+    node = ThrustToSPINode(0, (0, 1), 100000, 0)
 
     try:
         rclpy.spin(node)

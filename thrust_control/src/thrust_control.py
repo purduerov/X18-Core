@@ -65,8 +65,8 @@ class ThrustControlNode(Node):
 
         # initialize thrust arrays
         self.desired_effort = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        self.desired_thrusters = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        self.desired_thrusters_unramped = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self.desired_thrusters = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self.desired_thrusters_unramped = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
         # set initial orientation matrix to 3x3
         self.orientation_matrix = np.identity(3)
@@ -96,7 +96,7 @@ class ThrustControlNode(Node):
             translational_effort = self.orientation_matrix.dot(translational_effort)
 
             self.desired_effort[0:3] = translational_effort
-        #  self.get_logger().info("desired_effort effort: " + str(self.desired_effort))
+        #  self.get_logger().info("desired_effort effort: " + str (self.desired_effort))
 
         # desired_effort is 6 value vector of trans xyz, rot xyz
         if np.linalg.norm(self.desired_effort) > 1:
@@ -146,7 +146,7 @@ class ThrustControlNode(Node):
         # self.tools_pub.publish(tlm)
 
     def ramp(self, unramped_thrusters):
-        for index in range(0, 8):
+        for index in range(0, 6):
             if (
                 abs(unramped_thrusters[index] - self.desired_thrusters[index])
                 > MAX_CHANGE

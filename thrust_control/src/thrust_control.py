@@ -15,7 +15,7 @@ from thrust_mapping import ThrustMapper
 import numpy as np
 from enum import Enum
 
-MAX_CHANGE = 0.30
+MAX_CHANGE = 2
 
 # x trans ability is capped at 18.33 kgf-m physically
 # y trans ability is capped at 10.59 kgf-m physically
@@ -54,7 +54,6 @@ class ThrustControlNode(Node):
 
         # initialize publishers
         self.thrust_pub = self.create_publisher(FinalThrustMsg, "final_thrust", 10)
-        self.status_pub = self.create_publisher(ThrustStatusMsg, "thrust_status", 10)
 
         # self.tools_pub = self.create_publisher(ToolsCommandMsg, 'tools_control', 10) # TODO: ADD THIS PART
 
@@ -65,11 +64,8 @@ class ThrustControlNode(Node):
 
         # initialize thrust arrays
         self.desired_effort = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        self.desired_thrusters = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        self.desired_thrusters_unramped = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-
-        # set initial orientation matrix to 3x3
-        self.orientation_matrix = np.identity(3)
+        self.desired_thrusters = [0, 0, 0, 0, 0, 0]
+        self.desired_thrusters_unramped = [0, 0, 0, 0, 0, 0]
 
         self.power_mode = multiplier.standard
         self.frame = reference_frame.body
@@ -91,13 +87,6 @@ class ThrustControlNode(Node):
     def on_loop(self):
         global MULT_DICT
 
-        if self.frame == reference_frame.spatial:
-            translational_effort = np.array(self.desired_effort[0:3])
-            translational_effort = self.orientation_matrix.dot(translational_effort)
-
-            self.desired_effort[0:3] = translational_effort
-        #  self.get_logger().info("desired_effort effort: " + str (self.desired_effort))
-
         # desired_effort is 6 value vector of trans xyz, rot xyz
         if np.linalg.norm(self.desired_effort) > 1:
             self.desired_effort /= np.linalg.norm(self.desired_effort)
@@ -110,27 +99,16 @@ class ThrustControlNode(Node):
         # self.get_logger().info("desired_effort: " + str(self.desired_effort))
 
         # calculate thrust
-        self.desired_thrusters_unramped = [
-            self.tm.thrust_to_pwm(val)
-            for val in self.tm.thruster_output(self.desired_effort)
-        ]
+        self.desired_thrusters_unramped = self.tm.get_pwm(self.desired_effort)
 
         self.ramp(self.desired_thrusters_unramped)
         pwm_values = self.desired_thrusters
         # self.get_logger().info("pwm: " + str(pwm_values))
 
-        thrusters = [127, 127, 127, 127, 127, 127]
-        for i in range(0, 6):
-            thrusters[i] = int((pwm_values[i] + 1) * 127.5)
-            if thrusters[i] > 255:
-                thrusters[i] = 255
-            elif thrusters[i] < 0:
-                thrusters[i] = 0
-
         # assign values to publisher messages for thurst control and status
         tcm = FinalThrustMsg()
 
-        tcm.thrusters = bytearray(thrusters)
+        tcm.thrusters = bytearray(pwm_values)
 
         tsm = ThrustStatusMsg()
         tsm.status = pwm_values
@@ -145,7 +123,9 @@ class ThrustControlNode(Node):
 
         # self.tools_pub.publish(tlm)
 
+    # pwm cannot change by more than MAX_CHANGE per command
     def ramp(self, unramped_thrusters):
+
         for index in range(0, 6):
             if (
                 abs(unramped_thrusters[index] - self.desired_thrusters[index])

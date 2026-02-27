@@ -5,127 +5,94 @@ SCALE = 0.0254  # converts inches to meters
 THRUST_MAX = 3.71  # kg f
 THRUST_MIN = -2.92  # kg f
 
-
 class ThrustMapper:
     def __init__(self):
-        self.invert_array = [
-            -1,  # 1 BOTTOM
-            1,  # 2
-            -1,  # 3
-            -1,  # 4
-            1,  # 5 TOP
-            -1,  # 6
-        ]  # -1 inverts direction, 1 keeps the same direction
-        self.com = np.array([0.0, 0.0, 0.0]) * SCALE
-        # Values for horizontal thrusters
-        x_pos_horiz = 17.182 / 2  # values in inches
-        y_pos_horiz = 15.676 / 2  # values in inches
-        z_pos_horiz = 0  # values in inches
-        # Values for vertical thrusters
-        x_pos_vert = 8.4 / 2  # values in inches
-        y_pos_vert = 15.045 / 2  # values in inches
-        z_pos_vert = 5.636  # values in inches
-        self.location_frame_absolute = (
-            np.matrix(
-                [
-                    [x_pos_horiz, y_pos_horiz, z_pos_horiz],  # Thruster 1 (horizontal)
-                    [x_pos_horiz, -y_pos_horiz, z_pos_horiz],  # Thruster 2 (horizontal)
-                    [-x_pos_horiz, -y_pos_horiz, z_pos_horiz,],  # Thruster 3 (horizontal)
-                    [-x_pos_horiz, y_pos_horiz, z_pos_horiz],  # Thruster 4 (horizontal)
-                    [x_pos_vert, y_pos_vert, z_pos_vert],  # Thruster 5 (vertical)
-                    [x_pos_vert, -y_pos_vert, z_pos_vert],  # Thruster 6 (vertical)
-                ]
-            )
-            * SCALE
-        )
-        # Values for horizontal thrusters
-        x_comp_horiz = np.sqrt(2) / 2
-        y_comp_horiz = np.sqrt(2) / 2
-        z_comp_horiz = 0
-        # Values for vertical thrusters
-        x_comp_vert = 0
-        y_comp_vert = 0
-        z_comp_vert = 1
+        # inverts the thrust of each motor
+        self.invert_thrust = np.asarray([
+            1, # front left
+            1, # front right
+            1, # back left 
+            1, # back right
+            1, # top front
+            1 # back front
+        ])
 
-        self.direction = [
-            [x_comp_horiz, y_comp_horiz, z_comp_horiz],  # Thruster 1 (horizontal)
-            [x_comp_horiz, -y_comp_horiz, z_comp_horiz],  # Thruster 2 (horizontal)
-            [-x_comp_horiz, -y_comp_horiz, z_comp_horiz],  # Thruster 3 (horizontal)
-            [-x_comp_horiz, y_comp_horiz, z_comp_horiz],  # Thruster 4 (horizontal)
-            [x_comp_vert, y_comp_vert, -z_comp_vert],  # Thruster 5 (vertical)
-            [x_comp_vert, -y_comp_vert, -z_comp_vert],  # Thruster 6 (vertical)
+        # position of each thruster relative to the center of mass
+        self.position_vectors = [
+            np.asarray([[-2, 2, 0]]),
+            np.asarray([[2, 2, 0]]),
+            np.asarray([[-2, -2, 0]]),
+            np.asarray([[2, -2, 0]]),
+            np.asarray([[2, 0, 0]]),
+            np.asarray([[-2, 0, 0]])
         ]
-        print(np.matrix(self.direction))
-        self.direction = np.matrix(
-            [
-                [x * self.invert_array[i] for x in inner]
-                for i, inner in enumerate(self.direction)
-            ]
-        )
-        print(self.direction)
 
-        self.location = self.change_origin(0, 0, 0)
-        self.torque = self.torque_values()
-        self.thruster_force_map = self.thruster_force_map_values()
+        # unit vectors describing the orientation of each thruster
+        self.direction_vectors = [
+            np.asarray([[1, 1, 0]]),
+            np.asarray([[-1, 1, 0]]),
+            np.asarray([[1, -1, 0]]),
+            np.asarray([[-1, -1, 0]]),
+            np.asarray([[0, 0, 1]]),
+            np.asarray([[0, 0, 1]]),
+        ]
 
-    def change_origin(self, x, y, z):
-        return self.location_frame_absolute - self.com + np.array([x, y, z]) * SCALE
+        # matrix that maps commands to thrust
+        self.thrust_map = self._setup()
 
-    def torque_values(self):
-        return np.cross(self.location, self.direction)
+        
+        print(self.thrust_map)
 
-    def thruster_force_map_values(self):
-        assert len(self.direction) == len(
-            self.torque
-        ), "Initialize direction and torque first!"
-        return np.concatenate((np.transpose(self.direction), np.transpose(self.torque)))
+    # sets up the thrust map
+    def _setup(self):
+        # normalize direction vector just in case
+        self.direction_vectors = [v / np.linalg.norm(v) for v in self.direction_vectors]
 
-    def thruster_output(self, desired_force):
-        if not np.array_equal(desired_force, np.zeros(6)):
+        # create the top three rows of the allocation matrix B
+        # these are responsible for lateral motion
+        B_top = np.concatenate(self.direction_vectors, axis=0)
+        B_top = B_top.T
 
-            output_needed = np.transpose(np.array((desired_force,), dtype=float))
-            psuedo_inv = np.linalg.pinv(self.thruster_force_map)
-            force = np.matmul(psuedo_inv, output_needed)
+        # creat the bottom three rows of B
+        # these are responsible for torque
+        torque_vectors = [np.cross(b, a) for a, b in zip(self.direction_vectors, self.position_vectors)]
+        B_bottom = np.concatenate(torque_vectors, axis=0)
+        B_bottom = B_bottom.T
 
-            if max(force) < THRUST_MAX and min(force) > THRUST_MIN:
-                pass
-            else:
-                scale_max = abs(THRUST_MAX / max(force))
-                scale_min = abs(THRUST_MIN / min(force))
-                force *= min(scale_max, scale_min)
+        # combine B_top and B_bottom into B
+        B = np.concatenate((B_top, B_bottom), axis=0)
 
-            return np.transpose(force).tolist()[0]
-        return np.zeros(6)
+        # if the rank is less than 5, there is an issue so we should just return zeros
+        if(np.linalg.matrix_rank(B) < 5):
+            return np.zeros((6, 6))
 
-    @staticmethod
-    def thrust_to_pwm(thrust_val):
-        if thrust_val < -0.04:
-            pwm = (
-                0.018 * (thrust_val**3)
-                + 0.117 * (thrust_val**2)
-                + 0.4981 * thrust_val
-                - 0.09808
-            )
-        elif thrust_val > 0.04:
-            pwm = (
-                0.0095 * (thrust_val**3)
-                - 0.0783 * (thrust_val**2)
-                + 0.4004 * thrust_val
-                + 0.0986
-            )
-        else:
-            pwm = 0.0
-        return pwm
+        # compute the pseudoinverse of B, which is the thrust mapping matrix
+        B_pi = np.linalg.pinv(B)
 
-    @staticmethod
-    def pwm_to_thrust(pwm):
-        if pwm < -0.1:
-            thrust = -0.8944 * (pwm**3) - 2.971 * (pwm**2) + 0.9844 * pwm + 0.1005
-        elif pwm > 0.1:
-            thrust = -1.1095 * (pwm**3) + 3.9043 * (pwm**2) + 1.1101 * pwm - 0.113
-        else:
-            thrust = 0.0
+        return B_pi
+    
+    # gets the thrust values for a given effort vector
+    def _get_thrust(self, effort):
+        # find thrust_map * effort
+        effort = np.asarray(effort)
+        thrust = self.thrust_map @ (effort.T)
+        # invert thrusters as desired
+        thrust = thrust * self.invert_thrust
         return thrust
+    
+    # return a pwm value between 0 and 255 for each thruster. 127 is no thrust
+    def get_pwm(self, effort):
+        thrust = self._get_thrust(effort)
+        # clip the thrust to the allowable range
+        thrust = np.clip(thrust, a_min=THRUST_MIN, a_max=THRUST_MAX)
+        # normalize the thrust to 0 to 255
+        norm_thrust = [self._thrust_to_pwm(t)  for t in thrust]
+        return norm_thrust
+    
+    # maps a thrust between THRUST_MIN and THRUST_MAX to a pwm between 0 and 255
+    @staticmethod
+    def _thrust_to_pwm(thrust):
+        return int((thrust / (THRUST_MAX - THRUST_MIN) + 0.5) * 255)
 
 
 if __name__ == "__main__":
@@ -133,5 +100,5 @@ if __name__ == "__main__":
     tm = ThrustMapper()  # for i in range(100):
     desired_thrust_final = [1, 0.0, 1, 0.0, 0.0, 0.0]  # X Y Z Ro Pi Ya
     # oneiteration = True
-    pwm_values = tm.thruster_output(desired_thrust_final)
-    result = np.matmul(tm.thruster_force_map, pwm_values)
+    pwm_values = tm.get_pwm(desired_thrust_final)
+

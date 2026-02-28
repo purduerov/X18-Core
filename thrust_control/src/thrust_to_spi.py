@@ -91,7 +91,7 @@ class ThrustToSPINode(Node):
         return
 
     def tools_received(self, msg):
-        self.get_logger().info(f"TOOLS SENT: {[hex(n) for n in self.tools_data]}")
+        # self.get_logger().info(f"TOOLS SENT: {[hex(n) for n in self.tools_data]}")
         self.tools_data = self.tool_map(msg.tools)
         self.message_received(self.tools_data, 0xf, self.tools_handle)
         return
@@ -136,7 +136,6 @@ class ThrustToSPINode(Node):
         calc_crc = Crc32Mpeg2.calc(response_data)
        
         if(calc_crc != response_crc):
-            print('WRONG CRC')
             return
         else:
             msg_id = (response_data[0] >> 4) & 0x0F
@@ -153,12 +152,15 @@ class ThrustToSPINode(Node):
         print("Ctrl-C detected")
         self.blocked = True
 
+        # send kill msg to stop everything
         kill_msg = self.format_message(6 * [0], 0x0)
         self.transfer(kill_msg, self.thrust_handle)
+        self.transfer(kill_msg, self.tools_handle)
 
+        # close SPI handles
         lg.spi_close(self.thrust_handle)
-        lg.spi_close(self.power_handle)
-        print("Closed")
+        lg.spi_close(self.tools_handle)
+        self.get_logger().info("thrust_to_spi closed")
         exit(1)
 
 def main(args=None):

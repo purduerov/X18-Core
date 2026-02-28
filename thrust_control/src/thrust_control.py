@@ -8,9 +8,9 @@ from shared_msgs.msg import (
     FinalThrustMsg,
     ThrustStatusMsg,
     ThrustCommandMsg,
-    ComMsg,
-    ImuMsg,
-)  # , ToolsCommandMsg
+    ToolsMotorMsg,
+    ToolsCommandMsg
+)
 from thrust_mapping import ThrustMapper
 import numpy as np
 from enum import Enum
@@ -55,33 +55,38 @@ class ThrustControlNode(Node):
         # initialize publishers
         self.thrust_pub = self.create_publisher(FinalThrustMsg, "final_thrust", 10)
 
-        # self.tools_pub = self.create_publisher(ToolsCommandMsg, 'tools_control', 10) # TODO: ADD THIS PART
+        self.tools_pub = self.create_publisher(ToolsMotorMsg, 'tools_motor', 10)
 
         # initialize subscribers
         self.command_sub = self.create_subscription(
             ThrustCommandMsg, "thrust_command", self._pilot_command, 10
         )
 
+        self.tools_sub = self.create_subscription(
+            ToolsCommandMsg, "tools_command", self._tools_command, 10
+        )
+
         # initialize thrust arrays
-        self.desired_effort = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        self.desired_thrusters = [0, 0, 0, 0, 0, 0]
-        self.desired_thrusters_unramped = [0, 0, 0, 0, 0, 0]
+        self.desired_effort = np.asarray([0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=float)
+        self.desired_thrusters = np.asarray([0, 0, 0, 0, 0, 0], dtype=np.uint8)
+        self.desired_thrusters_unramped = np.asarray([0, 0, 0, 0, 0, 0], dtype=np.uint8)
 
         self.power_mode = multiplier.standard
         self.frame = reference_frame.body
 
     def _pilot_command(self, data):
         self.desired_effort = data.desired_thrust
-        # self.power_mode = data.is_fine
+        self.power_mode = data.is_fine
         # self.get_logger().info("power_mode: " + str(self.power_mode))
 
-        if data.is_pool_centric:
-            # self.frame = reference_frame.spatial
-            pass
-        else:
-            self.frame = reference_frame.body
-
         self.on_loop()
+
+    def _tools_command(self, data):
+        tools_command = np.asarray(data.tools)
+        tools_command = np.clip(tools_command, 0, 255)
+        msg = ToolsMotorMsg()
+        msg.tools = list(tools_command)
+        self.tools_pub.publish(msg)
 
 
     def on_loop(self):
@@ -94,7 +99,7 @@ class ThrustControlNode(Node):
 
 
         # scale effort by multplier value
-        self.desired_effort = MULT_DICT[self.power_mode]
+        self.desired_effort *= MULT_DICT[self.power_mode]
 
         # self.get_logger().info("desired_effort: " + str(self.desired_effort))
 
@@ -108,37 +113,21 @@ class ThrustControlNode(Node):
         # assign values to publisher messages for thurst control and status
         tcm = FinalThrustMsg()
 
-        tcm.thrusters = bytearray(pwm_values)
+        tcm.thrusters = pwm_values
 
-        tsm = ThrustStatusMsg()
-        tsm.status = pwm_values
-
-        # tlm = ToolsCommandMsg() # TODO: ADDED THIS PART
-        # tools = [127, 127, 127, 127]
-        # tlm.tools = tools
 
         # publish data
         self.thrust_pub.publish(tcm)
-        self.status_pub.publish(tsm)
 
-        # self.tools_pub.publish(tlm)
 
     # pwm cannot change by more than MAX_CHANGE per command
     def ramp(self, unramped_thrusters):
-
-        for index in range(0, 6):
-            if (
-                abs(unramped_thrusters[index] - self.desired_thrusters[index])
-                > MAX_CHANGE
-            ):
-                if unramped_thrusters[index] - self.desired_thrusters[index] > 0:
-                    self.desired_thrusters[index] += MAX_CHANGE
-                else:
-                    self.desired_thrusters[index] -= MAX_CHANGE
-                # return
-            else:
-                self.desired_thrusters[index] = unramped_thrusters[index]
-
+        # calculate the difference between the new and old thruster values
+        diff = unramped_thrusters - self.desired_thrusters
+        # clip the difference to +- MAX_CHANGE
+        diff = np.clip(diff, -MAX_CHANGE, MAX_CHANGE)
+        # add the difference back into the old thruster values
+        self.desired_thrusters += diff
 
 def main(args=None):
     rclpy.init(args=args)

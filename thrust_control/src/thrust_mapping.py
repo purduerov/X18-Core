@@ -40,9 +40,6 @@ class ThrustMapper:
         # matrix that maps commands to thrust
         self.thrust_map = self._setup()
 
-        
-        print(self.thrust_map)
-
     # sets up the thrust map
     def _setup(self):
         # normalize direction vector just in case
@@ -74,7 +71,6 @@ class ThrustMapper:
     # gets the thrust values for a given effort vector
     def _get_thrust(self, effort):
         # find thrust_map * effort
-        effort = np.asarray(effort)
         thrust = self.thrust_map @ (effort.T)
         # invert thrusters as desired
         thrust = thrust * self.invert_thrust
@@ -86,19 +82,20 @@ class ThrustMapper:
         # clip the thrust to the allowable range
         thrust = np.clip(thrust, a_min=THRUST_MIN, a_max=THRUST_MAX)
         # normalize the thrust to 0 to 255
-        norm_thrust = [self._thrust_to_pwm(t)  for t in thrust]
+        norm_thrust = self._thrust_to_pwm(thrust)
         return norm_thrust
     
     # maps a thrust between THRUST_MIN and THRUST_MAX to a pwm between 0 and 255
     @staticmethod
     def _thrust_to_pwm(thrust):
-        return int((thrust / (THRUST_MAX - THRUST_MIN) + 0.5) * 255)
+        thrust = (thrust / (THRUST_MAX - THRUST_MIN) + 0.5) * 255
+        thrust = np.asarray(thrust, dtype=np.uint8)
+        return thrust
 
 
 if __name__ == "__main__":
-    # global oneiteration
-    tm = ThrustMapper()  # for i in range(100):
+    tm = ThrustMapper() 
     desired_thrust_final = [1, 0.0, 1, 0.0, 0.0, 0.0]  # X Y Z Ro Pi Ya
-    # oneiteration = True
     pwm_values = tm.get_pwm(desired_thrust_final)
+    print(pwm_values)
 

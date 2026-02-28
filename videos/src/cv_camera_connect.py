@@ -14,7 +14,7 @@ signal.signal(signal.SIGINT, lambda *_args: quitEvent.set())
 
 # Your MediaMTX RTSP URL
 ip = "192.168.1.51"
-rtsp_url = f"rtsp://{ip}:8554/camera_1"  # replace with your MediaMTX server
+rtsp_url = f"rtsp://{ip}:8554/cv_camera"  # replace with your MediaMTX server
 
 # Create DepthAI pipeline
 

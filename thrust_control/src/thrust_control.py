@@ -39,8 +39,8 @@ class reference_frame(Enum):
 
 # [x trans, y trans, z trans, x rot, y rot, z rot]
 MULT_DICT = {
-    multiplier.fine : [1.0, 1.0, 1.0, 0.2, 0.6, 0.4], multiplier.standard : [1.5, 1.5, 1.5, 0.2, 1.0, 1.0],
-    multiplier.yeet : [3, 3, 3, 0.4, 2.0, 2.0], multiplier.MEGAYEET : [6, 6, 6, 0.4, 2.0, 2.0]
+    multiplier.fine : [1.0, 1.0, 1.0, 0.2, 0, 0.4], multiplier.standard : [1.5, 1.5, 1.5, 0.4, 0, 0.6],
+    multiplier.yeet : [3, 3, 3, 0.6, 0, 1.2], multiplier.MEGAYEET : [6, 6, 6, 1.2, 0, 2.4]
     }
 
 
@@ -90,14 +90,6 @@ class ThrustControlNode(Node):
 
 
     def on_loop(self):
-        global MULT_DICT
-
-        # desired_effort is 6 value vector of trans xyz, rot xyz
-        if np.linalg.norm(self.desired_effort) > 1:
-            self.desired_effort /= np.linalg.norm(self.desired_effort)
-        # self.get_logger().info("pre-ramped desired_effort: " + str(self.desired_effort))
-
-
         # scale effort by multplier value
         self.desired_effort *= MULT_DICT[self.power_mode]
 

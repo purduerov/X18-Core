@@ -68,8 +68,8 @@ class ThrustControlNode(Node):
 
         # initialize thrust arrays
         self.desired_effort = np.asarray([0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=float)
-        self.desired_thrusters = np.asarray([0, 0, 0, 0, 0, 0], dtype=np.uint8)
-        self.desired_thrusters_unramped = np.asarray([0, 0, 0, 0, 0, 0], dtype=np.uint8)
+        self.desired_thrusters = np.asarray([0, 0, 0, 0, 0, 0], dtype=np.int16)
+        self.desired_thrusters_unramped = np.asarray([0, 0, 0, 0, 0, 0], dtype=np.int16)
 
         self.power_mode = multiplier.standard
         self.frame = reference_frame.body
@@ -120,6 +120,7 @@ class ThrustControlNode(Node):
         diff = np.clip(diff, -MAX_CHANGE, MAX_CHANGE)
         # add the difference back into the old thruster values
         self.desired_thrusters += diff
+        self.desired_thrusters = np.clip(self.desired_thrusters, 0, 255)
 
 def main(args=None):
     rclpy.init(args=args)

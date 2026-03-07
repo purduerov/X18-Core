@@ -91,7 +91,7 @@ class ThrustControlNode(Node):
 
     def on_loop(self):
         # scale effort by multplier value
-        self.desired_effort *= MULT_DICT[self.power_mode]
+        #self.desired_effort *= MULT_DICT[self.power_mode]
 
         # self.get_logger().info("desired_effort: " + str(self.desired_effort))
 
@@ -99,7 +99,7 @@ class ThrustControlNode(Node):
         self.desired_thrusters_unramped = self.tm.get_pwm(self.desired_effort)
 
         self.ramp(self.desired_thrusters_unramped)
-        pwm_values = self.desired_thrusters
+        pwm_values = self.desired_thrusters_unramped
         # self.get_logger().info("pwm: " + str(pwm_values))
 
         # assign values to publisher messages for thurst control and status

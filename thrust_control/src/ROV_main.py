@@ -7,7 +7,6 @@ from utils.heartbeat_helper import HeartbeatHelper
 
 
 class ROVMainNode(Node):
-    controller_percent_power = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
     mode_fine = 0
 
@@ -32,13 +31,8 @@ class ROVMainNode(Node):
             self.thrust_response_callback,
             10
         )
-        
-        self.controller_percent_power[0] = 1
-        self.controller_percent_power[1] = 1
-        self.controller_percent_power[2] = 1
-        self.controller_percent_power[3] = 1
-        self.controller_percent_power[4] = 1
-        self.controller_percent_power[5] = 1
+
+        self.controller_percent_power = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         self.mode_fine = 1
         self.is_pool_centric = True
 
@@ -61,6 +55,7 @@ class ROVMainNode(Node):
         # self.tools_command_pub.publisher()
 
     def _controller_input(self, msg):
+        # self.get_logger().info(f"Velocity {msg.twist}")
         self.controller_percent_power[0] = msg.twist.linear.x
         self.controller_percent_power[1] = msg.twist.linear.y
         self.controller_percent_power[2] = msg.twist.linear.z

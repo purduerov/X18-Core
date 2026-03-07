@@ -85,7 +85,7 @@ class ThrustToSPINode(Node):
 
     # thrust callback function
     def thrust_received(self, msg):
-        # self.get_logger().info(f"THRUST SENT: {[hex(n) for n in self.thrust_data]}")
+        self.get_logger().info(f"THRUST SENT: {[n for n in self.thrust_data]}")
         self.thrust_data = self.thrust_map(msg.thrusters)
         self.message_received(self.thrust_data, 0xf, self.thrust_handle)
         return

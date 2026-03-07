@@ -8,9 +8,9 @@ from shared_msgs.msg import SensorCoordination
 # More info: https://github.com/bluerobotics/ms5837-python
 import ms5837
 
-IMU_COMPLETE = [True, False, False, True]
-DEPTH_READING = [False, True, False, False]
-DEPTH_COMPLETE = [False, True, False, True]
+IMU_COMPLETE = (True, False, False, True)
+DEPTH_READING = (False, True, False, False)
+DEPTH_COMPLETE = (False, True, False, True)
 
 class DepthSense(Node):
     def __init__(self):
@@ -51,7 +51,7 @@ class DepthSense(Node):
         # self.get_logger().info(f"Depth: {round(msg.data, 3)} km")
     
     def coord_callback(self, msg):
-        self.i2c_status = list(msg.i2c_status)
+        self.i2c_status = tuple(msg.i2c_status)
 
 def main(args=None):
     rclpy.init(args=args)

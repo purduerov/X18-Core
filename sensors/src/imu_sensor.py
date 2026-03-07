@@ -16,11 +16,15 @@ I2C_BUS = 1
 IMU_ADDR = 0x68
 REPORT_RATE = 1000000
 
+TEMP_COMPLETE = (False, False, True, True)
+IMU_READING = (True, False, False, False)
+IMU_COMPLETE = (True, False, False, True)
+
 class ImuSensor(Node):
 
     def __init__(self):
         super().__init__("imu_sensor")
-        #self.publisher_ = self.create_publisher(Float64, "depth", 10)
+        self.publisher_ = self.create_publisher(ImuMsg, "imu_msg", 10)
         self.coord_publisher_ = self.create_publisher(SensorCoordination, "sensor_coordination", 10)
         self.coord_subscriber = self.create_subscription(SensorCoordination, "sensor_coordination", self.coord_callback, 10)
         self.i2c_status = []
@@ -29,8 +33,8 @@ class ImuSensor(Node):
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         try:
-            self.sensor = MPU6050(1)
-            self.sensor.init()  # Initializes with density of freshwater
+            self.sensor = MPU6050(I2C_BUS, IMU_ADDR, 0)
+            self.sensor.setup()  # Initializes with density of freshwater
             self.get_logger().info("IMU sensor connected")
         except:
             self.get_logger().info("IMU sensor not found")
@@ -38,25 +42,25 @@ class ImuSensor(Node):
             exit(1)
 
     def timer_callback(self):
-        if self.sensor.read():
-            msg = ImuMsg()
-            msg.gyro[0] = self.sensor.anglular_velocity_x
-            msg.gyro[1] = self.sensor.anglular_velocity_y
-            msg.gyro[2] = self.sensor.anglular_velocity_z
-            msg.accel[0] = self.sensor.angluar_acceleration_x
-            msg.accel[1] = self.sensor.linear_acceleration_y
-            msg.accel[2] = self.sensor.linear_acceleration_z
+        msg = ImuMsg()
 
-            msg.pitch = self.sensor.pitch
-            msg.roll = self.sensor.roll
-            msg.yaw = self.sensor.yaw 
-            self.get_logger().info(f"Pitch: {round(msg.pitch, 3)} Roll: {round(msg.roll, 3)} Yaw: {round(msg.yaw, 3)}")
-            # publish imu data
-            # self.publisher_.publish(msg)
+        if(self.i2c_status == TEMP_COMPLETE):
+            self.i2c_status = IMU_READING
+            self.coord_publisher_.publish(self.i2c_status)
+            
+            self.sensor.read_imu()
+            msg.gyro = self.sensor.gyro_data
+            msg.accel = self.sensor.accel_data
+
+            self.publisher_.publish(msg)
+        elif(self.i2c_status == IMU_READING):
+            self.i2c_status = IMU_COMPLETE
+            self.coord_publisher_.publish(self.i2c_status)
 
 
-           
-
+        
+    def coord_callback(self, msg):
+        self.i2c_status = tuple(msg.i2c_status)
 
 def main(args=None):
     rclpy.init(args=args)

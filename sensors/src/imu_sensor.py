@@ -8,58 +8,54 @@ from rclpy.node import Node
 
 from BNO085 import BNO085
 from shared_msgs.msg import ImuMsg
+from shared_msgs.msg import SensorCoordination
+from MPU6050 import MPU6050
 
-
-# bind all angles to -180 to 180
-def clamp_angle_neg180_to_180(angle):
-    angle_0_to_360 = clamp_angle_0_to_360(angle)
-    if angle_0_to_360 > 180:
-        return angle_0_to_360 - 180 * -1.0
-    return angle_0_to_360
-
-
-# bind all angles to 0 to 360
-def clamp_angle_0_to_360(angle):
-    return (angle + 1 * 360) - math.floor((angle + 2 * 360) / 360) * 360
 
 I2C_BUS = 1
-IMU_ADDR = 0x00
+IMU_ADDR = 0x68
 REPORT_RATE = 1000000
 
 class ImuSensor(Node):
-    IMU_PITCH_OFFSET = 0.0
-    IMU_ROLL_OFFSET = 0.0
-    IMU_YAW_OFFSET = 0.0
 
     def __init__(self):
         super().__init__("imu_sensor")
+        #self.publisher_ = self.create_publisher(Float64, "depth", 10)
+        self.coord_publisher_ = self.create_publisher(SensorCoordination, "sensor_coordination", 10)
+        self.coord_subscriber = self.create_subscription(SensorCoordination, "sensor_coordination", self.coord_callback, 10)
+        self.i2c_status = []
 
-        self.imu = BNO085(I2C_BUS, IMU_ADDR, 0)
-        self.imu.setup(REPORT_RATE)
-        time.sleep(1)
-        self.pub = self.create_publisher(ImuMsg, "imu", 1)
+        timer_period = 1.0 / 20.0  # 20 Hz
+        self.timer = self.create_timer(timer_period, self.timer_callback)
 
-        self.timer = self.create_timer(1 / 20.0, self.loop)
+        try:
+            self.sensor = MPU6050(1)
+            self.sensor.init()  # Initializes with density of freshwater
+            self.get_logger().info("IMU sensor connected")
+        except:
+            self.get_logger().info("IMU sensor not found")
+            self.sensor = None
+            exit(1)
 
-    def loop(self):
-        if self.imu.read():
-            out_message = ImuMsg()
+    def timer_callback(self):
+        if self.sensor.read():
+            msg = ImuMsg()
+            msg.gyro[0] = self.sensor.anglular_velocity_x
+            msg.gyro[1] = self.sensor.anglular_velocity_y
+            msg.gyro[2] = self.sensor.anglular_velocity_z
+            msg.accel[0] = self.sensor.angluar_acceleration_x
+            msg.accel[1] = self.sensor.linear_acceleration_y
+            msg.accel[2] = self.sensor.linear_acceleration_z
 
-            # convert everything to a 0 to 360 to apply a 1d rotation then convert back to -180 to 180
-            rov_pitch = clamp_angle_0_to_360(self.imu.rotation_data[0]) - self.IMU_ROLL_OFFSET
-            rov_roll = clamp_angle_0_to_360(self.imu.rotation_data[1]) - self.IMU_YAW_OFFSET
-            rov_yaw = clamp_angle_0_to_360(self.imu.rotation_data[2]) - self.IMU_PITCH_OFFSET
+            msg.pitch = self.sensor.pitch
+            msg.roll = self.sensor.roll
+            msg.yaw = self.sensor.yaw 
+            self.get_logger().info(f"Pitch: {round(msg.pitch, 3)} Roll: {round(msg.roll, 3)} Yaw: {round(msg.yaw, 3)}")
+            # publish imu data
+            # self.publisher_.publish(msg)
 
-            out_message.gyro = [rov_pitch, rov_roll, rov_yaw]
 
-            rov_x_accel = self.imu.accel_data[0]
-            rov_y_accel = self.imu.accel_data[1]
-            rov_z_accel = self.imu.accel_data[2]
-
-            self.get_logger().info(f"Accel: {rov_x_accel, rov_y_accel, rov_z_accel}\n Rotation {rov_pitch, rov_yaw, rov_roll}")
-            out_message.accel = [rov_x_accel, rov_y_accel, rov_z_accel]
-
-            self.pub.publish(out_message)
+           
 
 
 def main(args=None):

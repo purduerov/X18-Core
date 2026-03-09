@@ -15,7 +15,7 @@ from thrust_mapping import ThrustMapper
 import numpy as np
 from enum import Enum
 
-MAX_CHANGE = 2
+MAX_CHANGE = 5
 
 # x trans ability is capped at 18.33 kgf-m physically
 # y trans ability is capped at 10.59 kgf-m physically
@@ -25,23 +25,18 @@ MAX_CHANGE = 2
 # z rot ability is capped at 5.39 kgf-m physically
 
 
-class multiplier(Enum):
-    fine = 0
-    standard = 1
-    yeet = 2
-    MEGAYEET = 3
+FINE = 0
+STANDARD = 1
+YEET = 2
+MEGAYEET = 3
 
-
-class reference_frame(Enum):
-    body = 0
-    spatial = 1
 
 
 # [x trans, y trans, z trans, x rot, y rot, z rot]
-MULT_DICT = {
-    multiplier.fine : [1.0, 1.0, 1.0, 0.2, 0, 0.4], multiplier.standard : [1.5, 1.5, 1.5, 0.4, 0, 0.6],
-    multiplier.yeet : [3, 3, 3, 0.6, 0, 1.2], multiplier.MEGAYEET : [6, 6, 6, 1.2, 0, 2.4]
-    }
+MULT = np.asarray([
+    [1.0, 1.0, 1.0, 0.2, 0, 0.4], [1.5, 1.5, 1.5, 0.4, 0, 0.6],
+    [3, 3, 3, 0.6, 0, 1.2], [6, 6, 6, 1.2, 0, 2.4]
+], dtype=float)
 
 
 class ThrustControlNode(Node):
@@ -68,11 +63,10 @@ class ThrustControlNode(Node):
 
         # initialize thrust arrays
         self.desired_effort = np.asarray([0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=float)
-        self.desired_thrusters = np.asarray([0, 0, 0, 0, 0, 0], dtype=np.int16)
-        self.desired_thrusters_unramped = np.asarray([0, 0, 0, 0, 0, 0], dtype=np.int16)
+        self.desired_thrusters = np.asarray([127, 127, 127, 127, 127, 127], dtype=np.int16)
+        self.desired_thrusters_unramped = np.asarray([127, 127, 127, 127, 127, 127], dtype=np.int16)
 
-        self.power_mode = multiplier.standard
-        self.frame = reference_frame.body
+        self.power_mode = STANDARD
 
     def _pilot_command(self, data):
         self.desired_effort = data.desired_thrust
@@ -91,7 +85,7 @@ class ThrustControlNode(Node):
 
     def on_loop(self):
         # scale effort by multplier value
-        #self.desired_effort *= MULT_DICT[self.power_mode]
+        self.desired_effort *= MULT[self.power_mode]
 
         # self.get_logger().info("desired_effort: " + str(self.desired_effort))
 
@@ -134,6 +128,6 @@ def main(args=None):
 
 if __name__ == "__main__":
     """
-    Note that this file is only set up for using 8 thrusters.
+    Note that this file is only set up for using 6 thrusters.
     """
     main()

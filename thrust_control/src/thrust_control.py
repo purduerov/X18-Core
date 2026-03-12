@@ -66,7 +66,7 @@ class ThrustControlNode(Node):
         self.desired_thrusters = np.asarray([127, 127, 127, 127, 127, 127], dtype=np.int16)
         self.desired_thrusters_unramped = np.asarray([127, 127, 127, 127, 127, 127], dtype=np.int16)
 
-        self.power_mode = STANDARD
+        self.power_mode = YEET
 
     def _pilot_command(self, data):
         self.desired_effort = data.desired_thrust
@@ -88,7 +88,7 @@ class ThrustControlNode(Node):
         self.desired_effort *= MULT[self.power_mode]
 
         # self.get_logger().info("desired_effort: " + str(self.desired_effort))
-
+        self.desired_effort = [20, 20, 20, 20, 20, 20]
         # calculate thrust
         self.desired_thrusters_unramped = self.tm.get_pwm(self.desired_effort)
 

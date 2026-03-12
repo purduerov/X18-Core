@@ -35,7 +35,7 @@ MEGAYEET = 3
 # [x trans, y trans, z trans, x rot, y rot, z rot]
 MULT = np.asarray([
     [1.0, 1.0, 1.0, 0.2, 0, 0.4], [1.5, 1.5, 1.5, 0.4, 0, 0.6],
-    [3, 3, 3, 0.6, 0, 1.2], [6, 6, 6, 1.2, 0, 2.4]
+    [3, 3, 3, 0.6, 0, 1.2], [6, 6, 6, 1.2, 2.4, 2.4]
 ], dtype=float)
 
 
@@ -66,7 +66,7 @@ class ThrustControlNode(Node):
         self.desired_thrusters = np.asarray([127, 127, 127, 127, 127, 127], dtype=np.int16)
         self.desired_thrusters_unramped = np.asarray([127, 127, 127, 127, 127, 127], dtype=np.int16)
 
-        self.power_mode = YEET
+        self.power_mode = MEGAYEET
 
     def _pilot_command(self, data):
         self.desired_effort = data.desired_thrust
@@ -88,7 +88,7 @@ class ThrustControlNode(Node):
         self.desired_effort *= MULT[self.power_mode]
 
         # self.get_logger().info("desired_effort: " + str(self.desired_effort))
-        self.desired_effort = np.asarray([20, 20, 20, 20, 20, 20], dtype=np.int16)
+        # self.desired_effort = np.asarray([20, 20, 20, 20, 20, 20], dtype=np.int16)
         # calculate thrust
         self.desired_thrusters_unramped = self.tm.get_pwm(self.desired_effort)
 

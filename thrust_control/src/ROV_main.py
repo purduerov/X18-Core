@@ -37,6 +37,7 @@ class ROVMainNode(Node):
         self.is_pool_centric = True
 
         # self.timer = self.create_timer(1 / 15.0, self.on_loop)
+        self.on_loop()
         self.is_pool_centric = False
 
     def on_loop(self):

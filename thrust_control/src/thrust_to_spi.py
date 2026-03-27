@@ -33,7 +33,7 @@ class ThrustToSPINode(Node):
         self.thrust_handle = lg.spi_open(device, channels[0], baud, flags)
         self.tools_handle = lg.spi_open(device, channels[1], baud, flags)
         self.id = 0
-        self.thrust_data = 6 * [0]
+        self.thrust_data = 6 * [127]
         self.tools_data = 6 * [0]
         self.blocked = False
 

@@ -61,12 +61,12 @@ class ThrustToSPINode(Node):
         mapped_thrusters = [127] * 6
 
         #NEED TO ADD CORRECT THRUSTER MAPPING
-        mapped_thrusters[0] = thrusters[0]
-        mapped_thrusters[1] = thrusters[1]
-        mapped_thrusters[2] = thrusters[2]
-        mapped_thrusters[3] = thrusters[3]
-        mapped_thrusters[4] = thrusters[4]
-        mapped_thrusters[5] = thrusters[5]
+        mapped_thrusters[0] = thrusters[5] # front left
+        mapped_thrusters[1] = thrusters[0] # front right
+        mapped_thrusters[2] = thrusters[2] # back left
+        mapped_thrusters[3] = thrusters[1] # back right
+        mapped_thrusters[4] = thrusters[4] # front top
+        mapped_thrusters[5] = thrusters[3] # back top
 
         return mapped_thrusters
     

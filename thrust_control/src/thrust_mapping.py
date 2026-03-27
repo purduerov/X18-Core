@@ -13,8 +13,8 @@ class ThrustMapper:
             1, # front right
             1, # back left 
             1, # back right
-            1, # top front
-            1 # back front
+            1, # front top
+            1 # back top
         ])
 
         # position of each thruster relative to the center of mass

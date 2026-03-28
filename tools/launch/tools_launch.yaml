@@ -3,3 +3,7 @@ launch:
       pkg: tools
       exec: tools_to_spi.py
       namespace: rov
+  - node:
+      pkg: tools
+      exec: tools_mapping.py
+      namespace: rov

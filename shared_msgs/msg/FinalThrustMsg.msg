@@ -1,1 +1,1 @@
-uint8[8] thrusters
+uint8[6] thrusters

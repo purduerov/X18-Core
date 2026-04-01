@@ -1,66 +1,55 @@
 #! /usr/bin/python3
-import RPi.GPIO as GPIO
-
+# import RPi.GPIO as GPIO
+import lgpio as lg
 # Change this to the actual pin that will be used for the leak sensor
 INPUT_PIN = 12
 
-# Set this to true if you want to run the node without using ros
-ROSless = False
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import Bool
 
-if not ROSless:
-    import rclpy
-    from std_msgs.msg import Bool
-else:
-    from time import sleep
+class LeakSense(Node):
+    def __init__(self):
+        super().__init__("leak_sensor")
+        self.publisher_ = self.create_publisher(Bool, "leak_sensor", 10)
+
+        timer_period = 1
+        self.time = self.create_timer(timer_period, self.timer_callback)
+        
+        self.get_logger().info("begin gpio init")
+        self.gpio_handle = lg.gpiochip_open(4)
+        self.get_logger().info(f"Handle {self.gpio_handle} : Gpiochip data{lg.gpio_get_chip_info(self.gpio_handle)}")
+        lg.gpio_claim_input(self.gpio_handle, INPUT_PIN)
+        self.get_logger().info(f"Gpio mode{lg.gpio_get_mode(self.gpio_handle, INPUT_PIN)}")
+        
+        
 
 
-def setup():
-    global pub, node
-    # Try to setup ROS node
-    if not ROSless:
-        try:
-            rclpy.init()
-            node = rclpy.create_node("leak_sensor")
-            pub = node.create_publisher(Bool, "leak_sensor", 10)
-            data_thread = node.create_timer(1, pub_data)
-        except:
-            print("Error initializing ROS")
-            return False
+    def timer_callback(self):
+        msg = Bool()
+        leak_status = lg.gpio_read(self.gpio_handle, INPUT_PIN)
+        msg.data = bool(leak_status)
+        self.get_logger().info(f"Leak status: {leak_status}")
+        self.publisher_.publish(msg)
+    
+    def close_gpio(self):
+        lg.gpio_free(self.gpio_handle, INPUT_PIN)
+        lg.gpiochip_close(0)
 
-    # Try to setup GPIO
+
+def main(args=None):
+    rclpy.init(args=args)
+    leak_sense = LeakSense()
     try:
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(INPUT_PIN, GPIO.IN)
-    except:
-        print("Error initializing GPIO")
-        return False
-    return True
-
-
-def pub_data():
-    leak_status = GPIO.input(INPUT_PIN)
-    new_msg = Bool()
-    new_msg.data = leak_status == 1
-    pub.publish(new_msg)
+        rclpy.spin(leak_sense)
+    except KeyboardInterrupt:
+        leak_sense.close_gpio()
+        rclpy.shutdown()
+        leak_sense.destroy_node()
+    
 
 
 if __name__ == "__main__":
-    if not setup():
-        print("Setup failed. Exiting.")
-        exit()
+    main()
 
-    if not ROSless:
-        try:
-            rclpy.spin(node)
-        except Exception as e:
-            print(e)
-            print("Exiting")
-        finally:
-            GPIO.cleanup()
-            rclpy.shutdown()
-
-    else:
-        while True:
-            # Print the status of the sensor
-            print(GPIO.input(INPUT_PIN))
-            sleep(0.5)
+    

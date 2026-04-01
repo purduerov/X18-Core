@@ -8,14 +8,14 @@ from shared_msgs.msg import (
     FinalThrustMsg,
     ThrustStatusMsg,
     ThrustCommandMsg,
-    ComMsg,
-    ImuMsg,
-)  # , ToolsCommandMsg
+    ToolsMotorMsg,
+    ToolsCommandMsg
+)
 from thrust_mapping import ThrustMapper
 import numpy as np
 from enum import Enum
 
-MAX_CHANGE = 0.30
+MAX_CHANGE = 5
 
 # x trans ability is capped at 18.33 kgf-m physically
 # y trans ability is capped at 10.59 kgf-m physically
@@ -25,23 +25,18 @@ MAX_CHANGE = 0.30
 # z rot ability is capped at 5.39 kgf-m physically
 
 
-class multiplier(Enum):
-    fine = 0
-    standard = 1
-    yeet = 2
-    MEGAYEET = 3
+FINE = 0
+STANDARD = 1
+YEET = 2
+MEGAYEET = 3
 
-
-class reference_frame(Enum):
-    body = 0
-    spatial = 1
 
 
 # [x trans, y trans, z trans, x rot, y rot, z rot]
-fine_multiplier = [1.0, 1.0, 1.0, 0.2, 0.6, 0.4]
-std_multiplier = [1.5, 1.5, 1.5, 0.2, 1.0, 1.0]
-yeet_multiplier = [3, 3, 3, 0.4, 2.0, 2.0]
-mega_yeet_multiplier = [6, 6, 6, 0.4, 2.0, 2.0]
+MULT = np.asarray([
+    [1.0, 1.0, 1.0, 0.2, 0, 0.4], [1.5, 1.5, 1.5, 0.4, 0, 0.6],
+    [3, 3, 3, 0.6, 0, 1.2], [6, 6, 6, 1.2, 0, 2.4]
+], dtype=float)
 
 
 class ThrustControlNode(Node):
@@ -54,162 +49,72 @@ class ThrustControlNode(Node):
 
         # initialize publishers
         self.thrust_pub = self.create_publisher(FinalThrustMsg, "final_thrust", 10)
-        self.status_pub = self.create_publisher(ThrustStatusMsg, "thrust_status", 10)
 
-        # self.tools_pub = self.create_publisher(ToolsCommandMsg, 'tools_control', 10) # TODO: ADD THIS PART
+        self.tools_pub = self.create_publisher(ToolsMotorMsg, 'tools_motor', 10)
 
         # initialize subscribers
         self.command_sub = self.create_subscription(
             ThrustCommandMsg, "thrust_command", self._pilot_command, 10
         )
-        self.com_sub = self.create_subscription(
-            ComMsg, "com_tweak", self._com_update, 10
+
+        self.tools_sub = self.create_subscription(
+            ToolsCommandMsg, "tools_command", self._tools_command, 10
         )
-        # assume IMU measurements in Roll-Pitch-Yaw
-        # self.rotation_sub = self.create_subscription(ImuMsg, 'imu', self._orientation_update, 10)
 
         # initialize thrust arrays
-        self.desired_effort = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        self.desired_thrusters = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        self.desired_thrusters_unramped = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self.desired_effort = np.asarray([0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=float)
+        self.desired_thrusters = np.asarray([127, 127, 127, 127, 127, 127], dtype=np.int16)
+        self.desired_thrusters_unramped = np.asarray([127, 127, 127, 127, 127, 127], dtype=np.int16)
 
-        # set initial orientation matrix to 3x3
-        self.orientation_matrix = np.identity(3)
-
-        self.power_mode = multiplier.standard
-        self.frame = reference_frame.body
+        self.power_mode = MEGAYEET 
 
     def _pilot_command(self, data):
         self.desired_effort = data.desired_thrust
         self.power_mode = data.is_fine
         # self.get_logger().info("power_mode: " + str(self.power_mode))
 
-        if data.is_pool_centric:
-            # self.frame = reference_frame.spatial
-            pass
-        else:
-            self.frame = reference_frame.body
-
         self.on_loop()
 
-    def _com_update(self, msg):
-        self.tm.location = self.tm.change_origin(msg.com[0], msg.com[1], msg.com[2])
-        self.tm.torque = self.tm.torque_values()
-        self.tm.thruster_force_map = self.tm.thruster_force_map_values()
+    def _tools_command(self, data):
+        tools_command = np.asarray(data.tools)
+        tools_command = np.clip(tools_command, 0, 255)
+        msg = ToolsMotorMsg()
+        msg.tools = list(tools_command)
+        self.tools_pub.publish(msg)
 
-    #  self.get_logger().info("changed" + str(msg.com[0]) + ":" + str(msg.com[1]) + ":" + str(msg.com[2]))
-
-    def _orientation_update(self, msg):
-        rot_x = np.array(
-            [
-                [1.0, 0.0, 0.0],
-                [
-                    0,
-                    np.cos(np.deg2rad(msg.gyro[0])),
-                    -1 * np.sin(np.deg2rad(msg.gyro[0])),
-                ],
-                [0, np.sin(np.deg2rad(msg.gyro[0])), np.cos(np.deg2rad(msg.gyro[0]))],
-            ]
-        )
-        rot_y = np.array(
-            [
-                [np.cos(np.deg2rad(msg.gyro[1])), 0.0, np.sin(np.deg2rad(msg.gyro[1]))],
-                [0.0, 1.0, 0.0],
-                [
-                    -1 * np.sin(np.deg2rad(msg.gyro[1])),
-                    0.0,
-                    np.cos(np.deg2rad(msg.gyro[1])),
-                ],
-            ]
-        )
-        # I can never keep roll-pitch-yaw to rotation matrix straight,
-        # used this source https://msl.cs.uiuc.edu/planning/node102.html
-        self.orientation_matrix = np.matmul(rot_y, rot_x)
-
-    #   self.get_logger().info("rotation matrix: " + str(self.orientation_matrix))
 
     def on_loop(self):
-        global fine_multiplier, std_multiplier, yeet_multiplier, mega_yeet_multiplier
-
-        if self.frame == reference_frame.spatial:
-            translational_effort = np.array(self.desired_effort[0:3])
-            translational_effort = self.orientation_matrix.dot(translational_effort)
-
-            self.desired_effort[0:3] = translational_effort
-        #  self.get_logger().info("desired_effort effort: " + str(self.desired_effort))
-
-        # desired_effort is 6 value vector of trans xyz, rot xyz
-        if np.linalg.norm(self.desired_effort) > 1:
-            self.desired_effort /= np.linalg.norm(self.desired_effort)
-        # self.get_logger().info("pre-ramped desired_effort: " + str(self.desired_effort))
-
-        if self.power_mode == 0:  # convert from normalized %effort to
-            self.desired_effort = self.desired_effort * fine_multiplier
-        #    self.get_logger().info("multiplier: " + str(fine_multiplier))
-
-        elif self.power_mode == 1:
-            self.desired_effort = self.desired_effort * std_multiplier
-        #   self.get_logger().info("multiplier: " + str(std_multiplier))
-
-        elif self.power_mode == 2:
-            self.desired_effort = self.desired_effort * yeet_multiplier
-        #  self.get_logger().info("multiplier: " + str(yeet_multiplier))
-        else:
-            self.desired_effort = self.desired_effort * mega_yeet_multiplier
-        # self.get_logger().info("multiplier: " + str(mega_yeet_multiplier))
+        # scale effort by multplier value
+        self.desired_effort *= (MULT[self.power_mode]  * 5)
 
         # self.get_logger().info("desired_effort: " + str(self.desired_effort))
-
+        # self.desired_effort = np.asarray([20, 20, 20, 20, 20, 20], dtype=np.int16)
         # calculate thrust
-        self.desired_thrusters_unramped = [
-            self.tm.thrust_to_pwm(val)
-            for val in self.tm.thruster_output(self.desired_effort)
-        ]
+        self.desired_thrusters_unramped = self.tm.get_pwm(self.desired_effort)
 
         self.ramp(self.desired_thrusters_unramped)
-        pwm_values = self.desired_thrusters
+        pwm_values = self.desired_thrusters_unramped
         # self.get_logger().info("pwm: " + str(pwm_values))
-
-        thrusters = [127, 127, 127, 127, 127, 127, 127, 127]
-        for i in range(0, 8):
-            thrusters[i] = int((pwm_values[i] + 1) * 127.5)
-            if thrusters[i] > 255:
-                thrusters[i] = 255
-            elif thrusters[i] < 0:
-                thrusters[i] = 0
 
         # assign values to publisher messages for thurst control and status
         tcm = FinalThrustMsg()
 
-        tcm.thrusters = bytearray(thrusters)
+        tcm.thrusters = pwm_values
 
-        tsm = ThrustStatusMsg()
-        tsm.status = pwm_values
-
-        # tlm = ToolsCommandMsg() # TODO: ADDED THIS PART
-        # tools = [127, 127, 127, 127]
-        # tlm.tools = tools
 
         # publish data
         self.thrust_pub.publish(tcm)
-        self.status_pub.publish(tsm)
 
-        # self.tools_pub.publish(tlm)
 
+    # pwm cannot change by more than MAX_CHANGE per command
     def ramp(self, unramped_thrusters):
-        for index in range(0, 8):
-            if (
-                abs(unramped_thrusters[index] - self.desired_thrusters[index])
-                > MAX_CHANGE
-            ):
-                if unramped_thrusters[index] - self.desired_thrusters[index] > 0:
-                    self.desired_thrusters[index] += MAX_CHANGE
-                else:
-                    self.desired_thrusters[index] -= MAX_CHANGE
-                # return
-            else:
-                self.desired_thrusters[index] = unramped_thrusters[index]
-
+        # calculate the difference between the new and old thruster values
+        diff = unramped_thrusters - self.desired_thrusters
+        # clip the difference to +- MAX_CHANGE
+        diff = np.clip(diff, -MAX_CHANGE, MAX_CHANGE)
+        # add the difference back into the old thruster values
+        self.desired_thrusters += diff
+        self.desired_thrusters = np.clip(self.desired_thrusters, 0, 255)
 
 def main(args=None):
     rclpy.init(args=args)
@@ -223,6 +128,6 @@ def main(args=None):
 
 if __name__ == "__main__":
     """
-    Note that this file is only set up for using 8 thrusters.
+    Note that this file is only set up for using 6 thrusters.
     """
     main()

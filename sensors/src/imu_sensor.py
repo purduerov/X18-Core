@@ -6,62 +6,61 @@ import time
 import rclpy
 from rclpy.node import Node
 
-from BNO055 import BNO055
+from BNO085 import BNO085
 from shared_msgs.msg import ImuMsg
+from shared_msgs.msg import SensorCoordination
+from MPU6050 import MPU6050
 
 
-# bind all angles to -180 to 180
-def clamp_angle_neg180_to_180(angle):
-    angle_0_to_360 = clamp_angle_0_to_360(angle)
-    if angle_0_to_360 > 180:
-        return angle_0_to_360 - 180 * -1.0
-    return angle_0_to_360
+I2C_BUS = 1
+IMU_ADDR = 0x68
+REPORT_RATE = 1000000
 
-
-# bind all angles to 0 to 360
-def clamp_angle_0_to_360(angle):
-    return (angle + 1 * 360) - math.floor((angle + 2 * 360) / 360) * 360
-
+TEMP_COMPLETE = (False, False, True, True)
+IMU_READING = (True, False, False, False)
+IMU_COMPLETE = (True, False, False, True)
 
 class ImuSensor(Node):
-    IMU_PITCH_OFFSET = 0.0
-    IMU_ROLL_OFFSET = 0.0
-    IMU_YAW_OFFSET = 0.0
 
     def __init__(self):
         super().__init__("imu_sensor")
+        self.publisher_ = self.create_publisher(ImuMsg, "imu_msg", 10)
+        self.coord_publisher_ = self.create_publisher(SensorCoordination, "sensor_coordination", 10)
+        self.coord_subscriber = self.create_subscription(SensorCoordination, "sensor_coordination", self.coord_callback, 10)
+        self.i2c_status = []
 
-        self.imu = BNO055()
-        time.sleep(1)
-        self.pub = self.create_publisher(ImuMsg, "imu", 1)
+        timer_period = 1.0 / 20.0  # 20 Hz
+        self.timer = self.create_timer(timer_period, self.timer_callback)
 
-        self.timer = self.create_timer(1 / 20.0, self.loop)
+        try:
+            self.sensor = MPU6050(I2C_BUS, IMU_ADDR, 0)
+            self.sensor.setup()  # Initializes with density of freshwater
+            self.get_logger().info("IMU sensor connected")
+        except:
+            self.get_logger().info("IMU sensor not found")
+            self.sensor = None
+            exit(1)
 
-    def loop(self):
-        if self.imu.update():
-            out_message = ImuMsg()
+    def timer_callback(self):
+        msg = ImuMsg()
 
-            # convert everything to a 0 to 360 to apply a 1d rotation then convert back to -180 to 180
-            rov_pitch = clamp_angle_0_to_360(self.imu.roll()) - self.IMU_ROLL_OFFSET
-            rov_roll = clamp_angle_0_to_360(self.imu.pitch()) - self.IMU_YAW_OFFSET
-            rov_yaw = clamp_angle_0_to_360(self.imu.yaw()) - self.IMU_PITCH_OFFSET
+        if(self.i2c_status == TEMP_COMPLETE):
+            self.i2c_status = IMU_READING
+            self.coord_publisher_.publish(self.i2c_status)
+            
+            self.sensor.read_imu()
+            msg.gyro = self.sensor.gyro_data
+            msg.accel = self.sensor.accel_data
 
-            out_message.gyro = [rov_pitch, rov_roll, rov_yaw]
+            self.publisher_.publish(msg)
+        elif(self.i2c_status == IMU_READING):
+            self.i2c_status = IMU_COMPLETE
+            self.coord_publisher_.publish(self.i2c_status)
 
-            rov_x_accel = self.imu.acceleration_x()
-            rov_y_accel = self.imu.acceleration_y()
-            rov_z_accel = self.imu.acceleration_z()
-            out_message.accel = [rov_x_accel, rov_y_accel, rov_z_accel]
 
-            self.pub.publish(out_message)
-
-    def reset_imu_offsets(self):
-        self.imu.update()
-
-        self.IMU_PITCH_OFFSET = self.imu.pitch()
-        self.IMU_ROLL_OFFSET = self.imu.roll()
-        self.IMU_YAW_OFFSET = self.imu.yaw()
-
+        
+    def coord_callback(self, msg):
+        self.i2c_status = tuple(msg.i2c_status)
 
 def main(args=None):
     rclpy.init(args=args)

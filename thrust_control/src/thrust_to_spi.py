@@ -1,69 +1,42 @@
 #! /usr/bin/python3
 import time
+import lgpio as lg 
 import rclpy
 from rclpy.node import Node
-from spidev import SpiDev
 from crccheck.crc import Crc32Mpeg2
 
 # import RPi.GPIO as GPIO
 
 from shared_msgs.msg import FinalThrustMsg, ToolsMotorMsg
 from utils.heartbeat_helper import HeartbeatHelper
-from gpiozero import Device
-from gpiozero.pins.native import NativeFactory
-from gpiozero import OutputDevice
-
-
-def invert_thrust(thrust_value):
-
-    return 255 - thrust_value - 1
-
-
-def split_bytes(num):
-    byte2 = num & 0xFF
-    byte1 = (num >> 8) & 0xFF
-    return [byte1, byte2]
-
-
-def swap_bytes(bytes_list):
-    return [bytes_list[1], bytes_list[0]]
-
 
 class ThrustToSPINode(Node):
     # initialize Class Variables
-    ZERO_THRUST = [127, 127, 127, 127, 127, 127, 127, 127]  # 127 is neutral
+    ZERO_THRUST = [127, 127, 127, 127, 127, 127]  # 127 is neutral
     ZERO_TOOLS = [127, 127, 127, 127]  # WHAT IS THE NEUTRAL VALUE???
     FULL_THRUST_CONTROL = 2
     TOOLS_SERVO_CONTROL = 3
     identifier = 0
     blocked = False
-
-    def __init__(self, bus=0, device=1, mode=0, speed=50000, bits_per_word=8):
+    
+    def __init__(self, device, channels : tuple, baud, flags):
         super().__init__("thrust_to_spi")
-
         # Setup heartbeat
         self.heartbeat_helper = HeartbeatHelper(self)
 
         # initialize logger
         logger = self.get_logger().info("INITIALIZED")
-
-        # initialize SPI
-        self.spi = SpiDev(bus, device)
-        self.spi.mode = mode
-        self.spi.max_speed_hz = speed
-        self.spi.bits_per_word = bits_per_word
-
         # initialize values
         self.thrusters = self.ZERO_THRUST
         self.tools = self.ZERO_TOOLS
-        self.pin = 8
 
-        # initialize pull-down for chip select
-        Device.pin_factory = NativeFactory()
+        self.thrust_handle = lg.spi_open(device, channels[0], baud, flags)
+        self.tools_handle = lg.spi_open(device, channels[1], baud, flags)
+        self.id = 0
+        self.thrust_data = 6 * [127]
+        self.tools_data = 6 * [0]
+        self.blocked = False
 
-        # GPIO.setup(24, GPIO.OUT, initial=GPIO.HIGH) # CE0,CE1 is 7,8; PINS 24 and 26
-
-        # Subscribe to final_thrust and start callback function
         self.thrust_sub = self.create_subscription(
             FinalThrustMsg,  # message, updated 50 times per second regardless of change
             "final_thrust",  # topic
@@ -71,179 +44,137 @@ class ThrustToSPINode(Node):
             10,
         )
 
+        self.thrust_response_pub = self.create_publisher(
+            FinalThrustMsg,
+            'thrust_response',
+            10
+        )
+    
         self.tools_sub = self.create_subscription(
-            ToolsMotorMsg, "/tools_motor", self.tools_received, 10
+            ToolsMotorMsg, 'tools_motor', self.tools_received, 10
         )
 
         return
 
+
     def thrust_map(self, thrusters):
-        mapped_thrusters = [127] * 8
+        mapped_thrusters = [127] * 6
 
-        # mapped_thrusters[0] = invert_thrust(thrusters[6])
-        # mapped_thrusters[1] = invert_thrust(thrusters[2])
-        # mapped_thrusters[2] = thrusters[5]
-        # mapped_thrusters[3] = thrusters[1]
-        # mapped_thrusters[4] = invert_thrust(thrusters[7])
-        # mapped_thrusters[5] = invert_thrust(thrusters[3])
-        # mapped_thrusters[6] = (thrusters[0])
-        # mapped_thrusters[7] = (thrusters[4])
-
-        mapped_thrusters[0] = thrusters[6]
-        mapped_thrusters[1] = thrusters[2]
-        mapped_thrusters[2] = thrusters[5]
-        mapped_thrusters[3] = thrusters[1]
-        mapped_thrusters[4] = thrusters[7]
-        mapped_thrusters[5] = thrusters[3]
-        mapped_thrusters[6] = thrusters[0]
-        mapped_thrusters[7] = thrusters[4]
+        #NEED TO ADD CORRECT THRUSTER MAPPING
+        mapped_thrusters[0] = thrusters[5] # front left
+        mapped_thrusters[1] = thrusters[0] # front right
+        mapped_thrusters[2] = thrusters[2] # back left
+        mapped_thrusters[3] = thrusters[1] # back right
+        mapped_thrusters[4] = thrusters[4] # front top
+        mapped_thrusters[5] = thrusters[3] # back top
 
         return mapped_thrusters
+    
+    def tool_map(self, tools):
+        mapped_tools = [127] * 6
 
-    # map thrusters to correct position and invert
-    # def thrust_map(self, thrusters):
-    #   mapped_thrusters = self.ZERO_THRUST
-    #  mapped_thrusters[0] = invert_thrust(thrusters[6])
-    # mapped_thrusters[1] = invert_thrust(thrusters[2])
-    # mapped_thrusters[2] = thrusters[5]
-    # mapped_thrusters[3] = thrusters[1]
-    # mapped_thrusters[4] = invert_thrust(thrusters[7])
-    # mapped_thrusters[5] = invert_thrust(thrusters[3])
-    # mapped_thrusters[6] = thrusters[0]
-    # mapped_thrusters[7] = thrusters[4]
-    # return mapped_thrusters
+        mapped_tools[0] = tools[0]
+        mapped_tools[1] = tools[1]
+        mapped_tools[2] = tools[2]
+        mapped_tools[3] = tools[3]
+        mapped_tools[4] = tools[4]
+        mapped_tools[5] = tools[5]
+
+        return mapped_tools
+
 
     # thrust callback function
     def thrust_received(self, msg):
-        print("THRUSTER RECEIVED")
-        self.data = self.thrust_map(msg.thrusters)
-        self.type = self.FULL_THRUST_CONTROL
-        self.message_received()
+        self.get_logger().info(f"THRUST SENT: {[n for n in self.thrust_data]}")
+        self.thrust_data = self.thrust_map(msg.thrusters)
+        self.message_received(self.thrust_data, 0xf, self.thrust_handle)
         return
 
     def tools_received(self, msg):
-        print("TOOLS RECEVIED")
-        self.data = list(msg.tools)
-        self.data += [0, 0, 0, 0]
-        self.type = self.TOOLS_SERVO_CONTROL
-        self.message_received()
+        # self.get_logger().info(f"TOOLS SENT: {[hex(n) for n in self.tools_data]}")
+        self.tools_data = self.tool_map(msg.tools)
+        self.message_received(self.tools_data, 0xf, self.tools_handle)
         return
 
     # process a received message from subscription
-    def message_received(self):
+    def message_received(self, data, msgType, handle):
         if not self.blocked:
-            self.set_message_id()
-            self.transfer(self.format_message())
-            self.response_handler()
+            self.blocked = True
+            received_mesage = self.transfer(self.format_message(data, msgType), handle)
+            self.blocked = False
+            self.response_handler(received_mesage)
         return
-
-    # sets id to an incremented 2-byte number
-    def set_message_id(self):
-        if self.identifier == 65535:
-            self.identifier = 0
-        else:
-            self.identifier += 1
-        return
-
-    # prepares each byte to be sent into list of bytes and gets CRC value
-    def format_message(self):
-        split_id = split_bytes(self.identifier)
-        message = [self.type] + list(split_id) + list(self.data)
-        self.compute_crc(message)
-        split_crc = swap_bytes(split_bytes(self.crc))
-        message += split_crc
-        return bytearray(message)
 
     # prepares input and calls the Crc32Mpeg2 CRC function
     def compute_crc(self, message):
-        message_list = []
-        for item in message:
-            message_list.extend([0x00, 0x00, 0x00, item])
-        self.crc = Crc32Mpeg2.calc(message_list)
+        crc_int =int(Crc32Mpeg2.calc(message))
+        self.crc = crc_int.to_bytes(4)
         return
 
-    """
-    message: 11 32-bit values
-    input data format: words
-    POLY = 0x4C11DB7
-    """
+    def transfer(self, data, handle):
+        (count, rx_buf) = lg.spi_xfer(handle, data) #(count, rx_data
+        if self.id == 0xF:
+            self.id = 0x0
+        else:
+            self.id += 1
+        # self.get_logger().info(f"RECEIVED DATA {[hex(n) for n in list(rx_buf)]}") 
+        return rx_buf #maybe return just the second part of the tuple
 
-    # sends the message and ~[pulls Chip Select pin low]
-    def transfer(self, message):
-        print("MASTER: ", list(message))
-        if not self.blocked:
-            self.last_message = list(message)
-            # GPIO.output(self.pin, GPIO.LOW)
-            self.spi.xfer3(message)
-            # GPIO.output(self.pin, GPIO.HIGH)
-        return
+    def format_message(self, data, msgType):
+        message = [msgType + (self.id << 4)] + list(data)
+        self.compute_crc(message)
+        message = bytearray(message)
+        message += self.crc
+        return message
+    
 
-    # sends data to allow slace response
-    def response_handler(self):
-        if not self.blocked:
-            time.sleep(0.0001)
-            message = [0] * len(self.last_message)
-            # GPIO.output(self.pin, GPIO.LOW)
-            response = list(self.spi.xfer3(message))
-            if (
-                response[-2] != self.last_message[-2]
-                or response[-1] != self.last_message[-1]
-            ):
-                print("ERROR: CRC VALUES DO NOT MATCH")
-            # GPIO.output(self.pin, GPIO.HIGH)
-            print("SLAVE: ", response)
+    # sends data to allow slave response
+    def response_handler(self, response : bytearray):
+        response_data = response[:-4]
+        response_crc = int.from_bytes(response[-4:], byteorder="big")
 
-        return
+        calc_crc = Crc32Mpeg2.calc(response_data)
+       
+        if(calc_crc != response_crc):
+            return
+        else:
+            msg_id = (response_data[0] >> 4) & 0x0F
+            msg_type = response_data[0] & 0x0F
+            response_data = response_data[1:]
+            msg = FinalThrustMsg()
+            msg.thrusters = list(response_data)
+            self.thrust_response_pub.publish(msg)
+            
 
-    # error and interrupt handler NEED TO UPDATE
+    
+
     def handler(self):
-        print("trl-C detected")
+        print("Ctrl-C detected")
         self.blocked = True
 
-        kill = [self.FULL_THRUST_CONTROL] + [0, 0] + self.ZERO_THRUST
-        print(kill)
-        self.compute_crc(kill)
-        split_crc = swap_bytes(split_bytes(self.crc))
-        kill += split_crc
-        self.spi.xfer3(bytearray(kill))
+        # send kill msg to stop everything
+        kill_msg = self.format_message(6 * [0], 0x0)
+        self.transfer(kill_msg, self.thrust_handle)
+        self.transfer(kill_msg, self.tools_handle)
 
-        print("THRUST MASTER: ", list(kill))
-
-        message = [self.TOOLS_SERVO_CONTROL] + [0, 0] + self.ZERO_TOOLS
-        print(message)
-        self.compute_crc(message)
-        split_crc = swap_bytes(split_bytes(self.crc))
-        message += split_crc
-        self.spi.xfer3(bytearray(message))
-
-        print("TOOLS MASTER: ", list(message))
-
-        self.spi.close()
-        # GPIO.cleanup()
-        print("Closed")
+        # close SPI handles
+        lg.spi_close(self.thrust_handle)
+        lg.spi_close(self.tools_handle)
+        self.get_logger().info("thrust_to_spi closed")
         exit(1)
 
-
 def main(args=None):
-    # initialize node and ROS
     rclpy.init(args=args)
-    node = ThrustToSPINode()
+    node = ThrustToSPINode(0, (0, 1), 100000, 0)
 
-    reset_pin = OutputDevice(22, active_high=True, initial_value=True)
-    reset_pin.off()
-    time.sleep(2)
-    reset_pin.on()
-
-    # run node
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        node.handler()
-
-    # cleanup
-    node.destroy_node()
-    rclpy.shutdown()
-
+        node.handler
+   
 
 if __name__ == "__main__":
     main()
+
+        
+

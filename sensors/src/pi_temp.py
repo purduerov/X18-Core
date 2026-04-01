@@ -19,6 +19,7 @@ class PiTemp(Node):
         msg = Float32()
         cpu = CPUTemperature()
         msg.data = cpu.temperature
+        self.get_logger().info(f"PI TEMP: {cpu}")
         self.publisher_.publish(msg)
 
 

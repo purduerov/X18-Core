@@ -3,3 +3,7 @@ launch:
       pkg: "videos"
       exec: "get_ip.py"
       namespace: "rov"
+  - node:
+      pkg: "videos"
+      exec: "cv_camera_connect.py"
+      namespace: "rov"

@@ -5,46 +5,56 @@ from rclpy.node import Node
 import subprocess
 import time
 
-
 class Camera(Node):
     def __init__(self):
         super().__init__("cameras")
         self.declare_parameter("ip")
-        self.declare_parameter("device", "device=/dev/video2")
+        self.declare_parameter("device", "device=/dev/video0")
         self.declare_parameter("camera_number", 1)
 
         ip_address = self.get_parameter("ip").get_parameter_value().string_value
+
         dev_name = self.get_parameter("device").get_parameter_value().string_value
         camera_num = self.get_parameter("camera_number").get_parameter_value().integer_value
 
         # Define RTSP stream URL
-        rtsp_url = f"rtsp://{ip_address}:8554/camera_{camera_num}"
+        rtsp_url = f"rtsp://{ip_address}:8554/camera{camera_num}"
         self.get_logger().info(f"Starting stream for camera {camera_num} on {dev_name} → {rtsp_url}")
 
         # Run FFmpeg in a restart loop
         while rclpy.ok():
             try:
-                process = subprocess.run(
-                    [
+                command = [
                         "ffmpeg",
                         "-f", "v4l2",
-                        "-i", dev_name,
+                        "-video_size", "640x480",
+                        "-input_format", "mjpeg",
+                        "-i", f"{dev_name}",
+                        "-c:v", "libx264",
+                        "-preset", "ultrafast",
+                        "-tune", "zerolatency",
+                        "-pix_fmt", "yuv420p",
+                        "-g", "1",
                         "-fflags", "nobuffer",
-                        "-codec:v", "copy",
-                        "-g", "10",
+                        "-flags", "low_delay",
+                        "-probesize", "32",
+                        "-analyzeduration", "0",
+                        "-rtsp_transport", "tcp",
                         "-f", "rtsp",
-                        rtsp_url
-                    ],
-                    check=True
-                )
+                        f"rtsp://{ip_address}:8554/camera{camera_num}"
+                        ]
+
+                # Launch ffmpeg as a background subprocess
+                self.ffmpeg_process = subprocess.Popen(command)
+
                 # If ffmpeg exits cleanly, log it and exit loop
-                self.get_logger().info(f"Camera {camera_num} stream ended normally.")
+                self.get_logger().info(f"Camera stream ended normally.")
                 break
 
             except subprocess.CalledProcessError as e:
                 self.get_logger().error(
-                    f"FFmpeg crashed for camera {camera_num} (exit code {e.returncode}). Restarting in 3 seconds..."
-                )
+                        f"FFmpeg crashed for camera {camera_num} (exit code {e.returncode}). Restarting in 3 seconds..."
+                        )
                 time.sleep(3)
 
             except Exception as e:

@@ -54,7 +54,7 @@ class IpSubscriberNode(Node):
                     devices.append(lines[i].strip())
                     i += 1
                 if len(devices) >= 3:
-                    explorehd_devices.append(devices[2])  # Third device (0-based index)
+                    explorehd_devices.append(devices[0])  # Third device (0-based index)
             else:
                 i += 1
 
@@ -68,7 +68,7 @@ class IpSubscriberNode(Node):
         # Launch nodes with the discovered devices
         i = 1
         for device in explorehd_devices:
-            if i > 6:
+            if i > 4:
                 self.get_logger().info("Device limit reached, not launching more nodes.")
                 break
             else:

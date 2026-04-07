@@ -13,7 +13,7 @@ from utils.heartbeat_helper import HeartbeatHelper
 class ThrustToSPINode(Node):
     # initialize Class Variables
     ZERO_THRUST = [127, 127, 127, 127, 127, 127]  # 127 is neutral
-    ZERO_TOOLS = [127, 127, 127, 127]  # WHAT IS THE NEUTRAL VALUE???
+    ZERO_TOOLS = [127, 127, 127, 127, 127, 127]  # WHAT IS THE NEUTRAL VALUE???
     FULL_THRUST_CONTROL = 2
     TOOLS_SERVO_CONTROL = 3
     identifier = 0

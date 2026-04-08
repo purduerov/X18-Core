@@ -7,7 +7,7 @@ from crccheck.crc import Crc32Mpeg2
 
 # import RPi.GPIO as GPIO
 
-from shared_msgs.msg import FinalThrustMsg, ToolsMotorMsg
+from shared_msgs.msg import FinalThrustMsg, ToolsCommandMsg
 from utils.heartbeat_helper import HeartbeatHelper
 
 class ThrustToSPINode(Node):
@@ -51,7 +51,7 @@ class ThrustToSPINode(Node):
         )
     
         self.tools_sub = self.create_subscription(
-            ToolsMotorMsg, 'tools_motor', self.tools_received, 10
+            ToolsCommandMsg, 'tools_motor', self.tools_received, 10
         )
 
         return
@@ -92,6 +92,7 @@ class ThrustToSPINode(Node):
 
     def tools_received(self, msg):
         # self.get_logger().info(f"TOOLS SENT: {[hex(n) for n in self.tools_data]}")
+        self.get_logger().info(f"[CORE RECEIVED TOOLS] {msg.tools}")
         self.tools_data = self.tool_map(msg.tools)
         self.message_received(self.tools_data, 0xf, self.tools_handle)
         return
@@ -175,6 +176,3 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
-
-        
-

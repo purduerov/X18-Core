@@ -44,7 +44,7 @@ class ImuSensor(Node):
     def timer_callback(self):
         msg = ImuMsg()
 
-        if(self.i2c_status == TEMP_COMPLETE):
+        if(TEMP_COMPLETE == (False, False, True, True)):
             self.i2c_status = IMU_READING
             self.coord_publisher_.publish(self.i2c_status)
             
@@ -53,9 +53,9 @@ class ImuSensor(Node):
             msg.accel = self.sensor.accel_data
 
             self.publisher_.publish(msg)
-        elif(self.i2c_status == IMU_READING):
-            self.i2c_status = IMU_COMPLETE
-            self.coord_publisher_.publish(self.i2c_status)
+       # elif(self.i2c_status == IMU_READING):
+          #  self.i2c_status = IMU_COMPLETE
+         #   self.coord_publisher_.publish(self.i2c_status)
 
 
         

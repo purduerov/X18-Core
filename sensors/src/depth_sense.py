@@ -32,17 +32,17 @@ class DepthSense(Node):
             exit(1)
 
     def timer_callback(self):
-        msg = Float64()
-        if self.i2c_status == IMU_COMPLETE:
-            self.i2c_status = DEPTH_READING
-            self.coord_publisher_.publish(self.i2c_status)
-            self.sensor.read()  # allows the sensor to read new data     -> maybe need to add this at the begining of each call to pull new data
-            msg.data = self.sensor.depth()
-            self.publisher_.publish(msg)
-            self.get_logger().info(f"Depth: {round(msg.data, 3)} km")
-        elif self.i2c_status == DEPTH_READING:
-            self.i2c_status = DEPTH_COMPLETE
-            self.coord_publisher_.publish(self.i2c_status)
+        # msg = Float64()
+        # if self.i2c_status == IMU_COMPLETE:
+        #     self.i2c_status = DEPTH_READING
+        #     self.coord_publisher_.publish(self.i2c_status)
+        #     self.sensor.read()  # allows the sensor to read new data     -> maybe need to add this at the begining of each call to pull new data
+        #     msg.data = self.sensor.depth()
+        #     self.publisher_.publish(msg)
+        #     self.get_logger().info(f"Depth: {round(msg.data, 3)} km")
+        # elif self.i2c_status == DEPTH_READING:
+        #     self.i2c_status = DEPTH_COMPLETE
+        #     self.coord_publisher_.publish(self.i2c_status)
 
 
 

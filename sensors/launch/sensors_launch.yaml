@@ -33,3 +33,8 @@ launch:
 #       pkg: sensors
 #       exec: ADT7410.py
 #       namespace: rov
+
+  - node:
+      pkg: sensors
+      exec: publish_sensors.py
+      namespace: rov

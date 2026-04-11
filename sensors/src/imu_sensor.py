@@ -59,8 +59,8 @@ class ImuSensor(Node):
 
 
         
-    def coord_callback(self, msg):
-        self.i2c_status = tuple(msg.i2c_status)
+    # def coord_callback(self, msg):
+    #     self.i2c_status = tuple(msg.i2c_status)
 
 def main(args=None):
     rclpy.init(args=args)

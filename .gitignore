@@ -5,3 +5,4 @@ utils
 log
 .vscode
 !.vscode/settings.json
+.venv

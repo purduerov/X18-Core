@@ -13,25 +13,50 @@ signal.signal(signal.SIGTERM, lambda *_args: quitEvent.set())
 signal.signal(signal.SIGINT, lambda *_args: quitEvent.set())
 
 # Your MediaMTX RTSP URL
-ip = "192.168.1.51"
+ip = 'localhost'#"192.168.1.51"
 rtsp_url = f"rtsp://{ip}:8554/cv_camera"  # replace with your MediaMTX server
 
 # Create DepthAI pipeline
 
 pipeline = dai.Pipeline()
+monoLeft = pipeline.create(dai.node.MonoCamera)
+monoRight = pipeline.create(dai.node.MonoCamera)
+stereo = pipeline.create(dai.node.StereoDepth)
 
-camRgb = pipeline.create(dai.node.ColorCamera)
-camRgb.setBoardSocket(dai.CameraBoardSocket.CAM_A)
+xout_depth = pipeline.create(dai.node.XLinkOut)
 
-camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_720_P)
-camRgb.setFps(30)
+xout_depth.setStreamName("depth")
+
+monoLeft.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
+monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
+
+# Shadow & Noise Mitigation (DepthAI 2.31.1 Syntax)
+stereo.initialConfig.PostProcessing().spatialFilter.enable = True
+stereo.initialConfig.PostProcessing().spatialFilter.holeFillingRadius = 5
+stereo.initialConfig.PostProcessing().spatialFilter.numIterations = 1
+
+stereo.initialConfig.PostProcessing().temporalFilter.enable = True
+stereo.initialConfig.PostProcessing().temporalFilter.persistencyMode = dai.RawStereoDepthConfig.PostProcessing.TemporalFilter.PersistencyMode.VALID_2_IN_LAST_4
+
+# 2. These methods usually work fine as direct setters on the config object
+stereo.initialConfig.setConfidenceThreshold(235)
+stereo.initialConfig.setMedianFilter(dai.MedianFilter.KERNEL_7x7)
+# Stereo Settings
+stereo.setLeftRightCheck(True)
+stereo.setSubpixel(True) # Crucial for accuracy on large objects
+stereo.setExtendedDisparity(True)
+# Linking
+monoLeft.out.link(stereo.left)
+monoRight.out.link(stereo.right)
+stereo.depth.link(xout_depth.input)
+
 
 video = pipeline.create(dai.node.VideoEncoder)
 video.setDefaultProfilePreset(
     30, dai.VideoEncoderProperties.Profile.H264_MAIN
 )
 
-camRgb.video.link(video.input)
+stereo.video.link(video.input)
 
 xout = pipeline.create(dai.node.XLinkOut)
 xout.setStreamName("h264")

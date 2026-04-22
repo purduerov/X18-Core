@@ -20,10 +20,12 @@ rtsp_url = f"rtsp://{ip}:8554/cv_camera"  # replace with your MediaMTX server
 
 pipeline = dai.Pipeline()
 
-camRgb = pipeline.create(dai.node.ColorCamera)
+#camRgb = pipeline.create(dai.node.ColorCamera)
+camRgb = pipeline.create(dai.node.Camera)
 camRgb.setBoardSocket(dai.CameraBoardSocket.CAM_A)
 
-camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_720_P)
+#camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_720_P)
+camRgb.setSize(640,400)
 camRgb.setFps(30)
 
 video = pipeline.create(dai.node.VideoEncoder)

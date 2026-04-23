@@ -1,24 +1,24 @@
 #! /usr/bin/python3
 import time
-import lgpio as lg 
+import lgpio as lg
 import rclpy
 from rclpy.node import Node
 from crccheck.crc import Crc32Mpeg2
 
 # import RPi.GPIO as GPIO
 
-from shared_msgs.msg import FinalThrustMsg, ToolsMotorMsg
+from shared_msgs.msg import FinalThrustMsg, ToolsCommandMsg
 from utils.heartbeat_helper import HeartbeatHelper
 
 class ThrustToSPINode(Node):
     # initialize Class Variables
-    ZERO_THRUST = [127, 127, 127, 127, 127, 127]  # 127 is neutral
-    ZERO_TOOLS = [127, 127, 127, 127]  # WHAT IS THE NEUTRAL VALUE???
+    ZERO_THRUST = [127, 127, 127, 127, 127, 127] # 127 is neutral
+    ZERO_TOOLS = [127, 127, 127, 127, 127, 127] # WHAT IS THE NEUTRAL VALUE???
     FULL_THRUST_CONTROL = 2
     TOOLS_SERVO_CONTROL = 3
     identifier = 0
     blocked = False
-    
+
     def __init__(self, device, channels : tuple, baud, flags):
         super().__init__("thrust_to_spi")
         # Setup heartbeat
@@ -49,12 +49,13 @@ class ThrustToSPINode(Node):
             'thrust_response',
             10
         )
-    
+
         self.tools_sub = self.create_subscription(
-            ToolsMotorMsg, 'tools_motor', self.tools_received, 10
+            ToolsCommandMsg, 'tools_motor', self.tools_received, 10
         )
 
         return
+
 
 
     def thrust_map(self, thrusters):
@@ -69,18 +70,19 @@ class ThrustToSPINode(Node):
         mapped_thrusters[5] = thrusters[3] # back top
 
         return mapped_thrusters
-    
+
     def tool_map(self, tools):
         mapped_tools = [127] * 6
 
-        mapped_tools[0] = tools[0]
+        mapped_tools[0] = tools[5]
         mapped_tools[1] = tools[1]
-        mapped_tools[2] = tools[2]
-        mapped_tools[3] = tools[3]
-        mapped_tools[4] = tools[4]
+        mapped_tools[2] = tools[0]
+        mapped_tools[3] = tools[2]
+        mapped_tools[4] = tools[5]
         mapped_tools[5] = tools[5]
 
         return mapped_tools
+
 
 
     # thrust callback function
@@ -92,6 +94,7 @@ class ThrustToSPINode(Node):
 
     def tools_received(self, msg):
         # self.get_logger().info(f"TOOLS SENT: {[hex(n) for n in self.tools_data]}")
+        self.get_logger().info(f"[CORE RECEIVED TOOLS] {msg.tools}")
         self.tools_data = self.tool_map(msg.tools)
         self.message_received(self.tools_data, 0xf, self.tools_handle)
         return
@@ -117,7 +120,7 @@ class ThrustToSPINode(Node):
             self.id = 0x0
         else:
             self.id += 1
-        # self.get_logger().info(f"RECEIVED DATA {[hex(n) for n in list(rx_buf)]}") 
+        # self.get_logger().info(f"RECEIVED DATA {[hex(n) for n in list(rx_buf)]}")
         return rx_buf #maybe return just the second part of the tuple
 
     def format_message(self, data, msgType):
@@ -126,7 +129,8 @@ class ThrustToSPINode(Node):
         message = bytearray(message)
         message += self.crc
         return message
-    
+
+
 
     # sends data to allow slave response
     def response_handler(self, response : bytearray):
@@ -134,7 +138,7 @@ class ThrustToSPINode(Node):
         response_crc = int.from_bytes(response[-4:], byteorder="big")
 
         calc_crc = Crc32Mpeg2.calc(response_data)
-       
+
         if(calc_crc != response_crc):
             return
         else:
@@ -144,9 +148,12 @@ class ThrustToSPINode(Node):
             msg = FinalThrustMsg()
             msg.thrusters = list(response_data)
             self.thrust_response_pub.publish(msg)
-            
 
-    
+
+
+
+
+
 
     def handler(self):
         print("Ctrl-C detected")
@@ -171,10 +178,8 @@ def main(args=None):
         rclpy.spin(node)
     except KeyboardInterrupt:
         node.handler
-   
+
+
 
 if __name__ == "__main__":
     main()
-
-        
-

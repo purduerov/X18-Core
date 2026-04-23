@@ -23,6 +23,7 @@ install(PROGRAMS
   src/BNO085.py
   src/hat_temp.py
   src/ADT7410.py
+  src/publish_sensors.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

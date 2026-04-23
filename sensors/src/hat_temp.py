@@ -21,7 +21,7 @@ class HatTempSensor(Node):
 
 
     def timer_callback(self):
-        if self.i2c_status == DEPTH_COMPLETE:
+        if DEPTH_COMPLETE == (False, True, False, True):
             msg = Float32()
             #coordination
             self.i2c_status = TEMP_READING
@@ -30,9 +30,9 @@ class HatTempSensor(Node):
             #read temperature
             msg.data = self.sensor.read_temperature()
             self.publisher_.publish(msg)
-        elif self.i2c_status == TEMP_READING:
-            self.i2c_status = TEMP_COMPLETE
-            self.coord_publisher_.publish(self.i2c_status)
+        # elif self.i2c_status == TEMP_READING:
+        #     self.i2c_status = TEMP_COMPLETE
+        #     self.coord_publisher_.publish(self.i2c_status)
 
 
     def coord_callback(self, msg):

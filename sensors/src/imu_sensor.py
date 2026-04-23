@@ -42,25 +42,25 @@ class ImuSensor(Node):
             exit(1)
 
     def timer_callback(self):
-        msg = ImuMsg()
+        # msg = ImuMsg()
 
-        if(self.i2c_status == TEMP_COMPLETE):
-            self.i2c_status = IMU_READING
-            self.coord_publisher_.publish(self.i2c_status)
+        # if(self.i2c_status == TEMP_COMPLETE):
+        #     self.i2c_status = IMU_READING
+        #     self.coord_publisher_.publish(self.i2c_status)
             
-            self.sensor.read_imu()
-            msg.gyro = self.sensor.gyro_data
-            msg.accel = self.sensor.accel_data
+        #     self.sensor.read_imu()
+        #     msg.gyro = self.sensor.gyro_data
+        #     msg.accel = self.sensor.accel_data
 
-            self.publisher_.publish(msg)
-        elif(self.i2c_status == IMU_READING):
-            self.i2c_status = IMU_COMPLETE
-            self.coord_publisher_.publish(self.i2c_status)
+        #     self.publisher_.publish(msg)
+        # elif(self.i2c_status == IMU_READING):
+        #     self.i2c_status = IMU_COMPLETE
+        #     self.coord_publisher_.publish(self.i2c_status)
 
 
         
-    def coord_callback(self, msg):
-        self.i2c_status = tuple(msg.i2c_status)
+    # def coord_callback(self, msg):
+    #     self.i2c_status = tuple(msg.i2c_status)
 
 def main(args=None):
     rclpy.init(args=args)

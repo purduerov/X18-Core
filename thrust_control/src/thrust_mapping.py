@@ -5,26 +5,28 @@ SCALE = 0.0254  # converts inches to meters
 THRUST_MAX = 3.71  # kg f
 THRUST_MIN = -2.92  # kg f
 
+Z_OFFSET = 0
+
 class ThrustMapper:
     def __init__(self):
         # inverts the thrust of each motor
         self.invert_thrust = np.asarray([
             1, # front left
             1, # front right
-            1, # back left 
-            1, # back right
-            1, # front top
+            -1, # back left 
+            -1, # back right
+            -1, # front top
             1 # back top
         ])
 
         # position of each thruster relative to the center of mass
         self.position_vectors = [
-            np.asarray([[-2, 2, 0]]),
-            np.asarray([[2, 2, 0]]),
-            np.asarray([[-2, -2, 0]]),
-            np.asarray([[2, -2, 0]]),
-            np.asarray([[2, 0, 0]]),
-            np.asarray([[-2, 0, 0]])
+            np.asarray([[-0.1981, 0.1852, 0.0699 + Z_OFFSET]]),
+            np.asarray([[0.1981, 0.1852, 0.0699 + Z_OFFSET]]),
+            np.asarray([[-0.1981, -0.1852, 0.0699 + Z_OFFSET]]),
+            np.asarray([[0.1981, -0.1852, 0.0699 + Z_OFFSET]]),
+            np.asarray([[0.2223, 0, 0]]),
+            np.asarray([[-0.2223, 0, 0]])
         ]
 
         # unit vectors describing the orientation of each thruster
@@ -80,22 +82,27 @@ class ThrustMapper:
     def get_pwm(self, effort):
         thrust = self._get_thrust(effort)
         # clip the thrust to the allowable range
-        thrust = np.clip(thrust, a_min=THRUST_MIN, a_max=THRUST_MAX)
+        thrust = np.clip(thrust, a_min=-THRUST_MAX, a_max=THRUST_MAX)
         # normalize the thrust to 0 to 255
         norm_thrust = self._thrust_to_pwm(thrust)
         return norm_thrust
     
-    # maps a thrust between THRUST_MIN and THRUST_MAX to a pwm between 0 and 255
+    # maps a thrust between THRUST_MIN and THRUST_MAX to a pwm between 25 and 230
     @staticmethod
     def _thrust_to_pwm(thrust):
-        thrust = (thrust / (THRUST_MAX - THRUST_MIN) + 0.5) * 255
+        thrust = np.clip(thrust / (THRUST_MAX - THRUST_MIN) + 0.5, a_min = 0, a_max = 1.0)
+        thrust = thrust * 205 + 25
+        thrust = np.asarray(thrust, dtype=np.int16)
+        thrust = np.clip(thrust, a_min=25, a_max=230)
         thrust = np.asarray(thrust, dtype=np.uint8)
         return thrust
 
 
 if __name__ == "__main__":
-    tm = ThrustMapper() 
-    desired_thrust_final = [1, 0.0, 1, 0.0, 0.0, 0.0]  # X Y Z Ro Pi Ya
+    np.set_printoptions(suppress=True)
+    tm = ThrustMapper()
+    print(tm.thrust_map)
+    desired_thrust_final = np.asarray([0.0, 0.0, 10, 0.0, 0.0, 0.0])  # X Y Z Ro Pi Ya
     pwm_values = tm.get_pwm(desired_thrust_final)
     print(pwm_values)
 

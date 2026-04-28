@@ -33,6 +33,7 @@ class Camera(Node):
                         "-codec:v", "copy",
                         "-g", "10",
                         "-f", "rtsp",
+                        "-rtsp_transport", "tcp",
                         rtsp_url
                     ],
                     check=True
